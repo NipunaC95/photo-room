@@ -1,0 +1,8 @@
+// ============================================================
+// Main SCSS Entry — imports all partials
+// ============================================================
+@use 'variables' as *;
+@use 'reset';
+@use 'layout';
+@use 'panels';
+@use 'histogram';

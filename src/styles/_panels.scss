@@ -1,0 +1,386 @@
+// ============================================================
+// Panel Controls — Sliders, Sections, Labels, Tabs
+// ============================================================
+
+// ----- Panel Section -----
+.panel-section {
+  margin-bottom: $space-5;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.panel-section-title {
+  font-size: $text-xs;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: $text-muted;
+  margin-bottom: $space-3;
+  padding-bottom: $space-2;
+  border-bottom: 1px solid $border-subtle;
+}
+
+// ----- Slider Row -----
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  margin-bottom: $space-3;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.slider-label {
+  font-size: $text-sm;
+  color: $text-secondary;
+  width: 80px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.slider-track-wrap {
+  flex: 1;
+  position: relative;
+  height: 18px;
+  display: flex;
+  align-items: center;
+}
+
+// Custom range input
+.slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 3px;
+  border-radius: $radius-full;
+  background: $slider-track;
+  outline: none;
+  cursor: pointer;
+  transition: opacity $transition-fast;
+
+  &:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  // Webkit thumb
+  &::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    background: $slider-thumb;
+    cursor: pointer;
+    border: 2px solid rgba(255,255,255,0.2);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+    transition: transform $transition-fast, box-shadow $transition-fast;
+
+    &:hover {
+      transform: scale(1.2);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.6), 0 0 0 3px rgba($accent-purple, 0.2);
+    }
+  }
+
+  // Firefox thumb
+  &::-moz-range-thumb {
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    background: $slider-thumb;
+    cursor: pointer;
+    border: 2px solid rgba(255,255,255,0.2);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+    transition: transform $transition-fast;
+
+    &:hover {
+      transform: scale(1.2);
+    }
+  }
+}
+
+.slider-value {
+  font-size: $text-sm;
+  font-family: $font-mono;
+  color: $text-primary;
+  width: 36px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+// ----- Tabs (for HSL color tabs) -----
+.panel-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-1;
+  margin-bottom: $space-4;
+}
+
+.panel-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 $space-2;
+  border-radius: $radius-sm;
+  font-size: $text-xs;
+  font-weight: 500;
+  color: $text-muted;
+  transition: all $transition-fast;
+  background: $bg-surface;
+
+  .color-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  &:hover {
+    color: $text-secondary;
+    background: $bg-surface-2;
+  }
+
+  &.active {
+    color: $text-primary;
+    background: $bg-surface-3;
+    outline: 1px solid $border-active;
+  }
+}
+
+// ----- Color Wheel -----
+.color-wheel-group {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+}
+
+.color-wheel-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $space-3;
+}
+
+.color-wheel-label {
+  font-size: $text-xs;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: $text-muted;
+}
+
+.color-wheel-canvas {
+  border-radius: 50%;
+  cursor: crosshair;
+  position: relative;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.5);
+  transition: box-shadow $transition-base;
+
+  &:hover {
+    box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+  }
+}
+
+.color-wheel-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.color-wheel-puck {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 0 4px rgba(0,0,0,0.8);
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  transition: box-shadow $transition-fast;
+}
+
+.color-wheel-luminance {
+  width: 100%;
+}
+
+// ----- Tone Curve -----
+.curve-canvas {
+  border-radius: $radius-md;
+  background: $bg-surface;
+  cursor: crosshair;
+  display: block;
+  width: 100%;
+  border: 1px solid $border-subtle;
+}
+
+.curve-channel-tabs {
+  display: flex;
+  gap: $space-1;
+  margin-bottom: $space-3;
+}
+
+.curve-channel-tab {
+  height: 24px;
+  padding: 0 $space-3;
+  border-radius: $radius-sm;
+  font-size: $text-xs;
+  font-weight: 500;
+  color: $text-muted;
+  transition: all $transition-fast;
+  background: $bg-surface;
+
+  &:hover { color: $text-secondary; background: $bg-surface-2; }
+
+  &.active {
+    color: $text-primary;
+    background: $bg-surface-3;
+    outline: 1px solid $border-active;
+  }
+
+  &[data-channel="rgb"] { &.active { color: $curve-rgb; } }
+  &[data-channel="r"]   { &.active { color: $curve-red; } }
+  &[data-channel="g"]   { &.active { color: $curve-green; } }
+  &[data-channel="b"]   { &.active { color: $curve-blue; } }
+}
+
+.curve-hint {
+  font-size: $text-xs;
+  color: $text-disabled;
+  text-align: center;
+  margin-top: $space-2;
+}
+
+// ----- Reset button for panel -----
+.panel-reset-btn {
+  display: flex;
+  align-items: center;
+  gap: $space-1;
+  height: 24px;
+  padding: 0 $space-2;
+  border-radius: $radius-sm;
+  font-size: $text-xs;
+  color: $text-muted;
+  border: 1px solid $border-subtle;
+  background: $bg-surface;
+  margin-left: auto;
+  transition: all $transition-fast;
+
+  &:hover {
+    color: $text-secondary;
+    border-color: $border-default;
+    background: $bg-surface-2;
+  }
+}
+
+// ----- Panel header row -----
+.panel-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: $space-5;
+
+  h2 {
+    font-size: $text-md;
+    font-weight: 600;
+    color: $text-primary;
+    letter-spacing: -0.01em;
+  }
+}
+
+// ----- Number input -----
+.num-input {
+  width: 44px;
+  height: 22px;
+  background: $bg-surface;
+  border: 1px solid $border-subtle;
+  border-radius: $radius-sm;
+  color: $text-primary;
+  font-family: $font-mono;
+  font-size: $text-xs;
+  text-align: center;
+  transition: border-color $transition-fast;
+
+  &:focus {
+    border-color: $accent-purple;
+  }
+}
+
+// ----- Toggle Switch -----
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $space-3;
+}
+
+.toggle-label {
+  font-size: $text-sm;
+  color: $text-secondary;
+}
+
+.toggle {
+  position: relative;
+  width: 32px;
+  height: 18px;
+
+  input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+  }
+
+  .toggle-track {
+    position: absolute;
+    inset: 0;
+    background: $bg-surface-3;
+    border-radius: $radius-full;
+    border: 1px solid $border-default;
+    transition: all $transition-base;
+    cursor: pointer;
+
+    &::after {
+      content: '';
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: $text-muted;
+      top: 2px;
+      left: 2px;
+      transition: all $transition-base;
+    }
+  }
+
+  input:checked + .toggle-track {
+    background: rgba($accent-purple, 0.3);
+    border-color: $accent-purple;
+
+    &::after {
+      transform: translateX(14px);
+      background: $accent-purple;
+    }
+  }
+}
+
+// ----- Divider -----
+.divider {
+  height: 1px;
+  background: $border-subtle;
+  margin: $space-4 0;
+}
+
+// ----- Badge -----
+.value-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: $radius-full;
+  font-size: $text-xs;
+  font-family: $font-mono;
+  background: $bg-surface-3;
+  color: $text-secondary;
+}

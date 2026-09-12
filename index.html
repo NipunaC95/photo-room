@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Davinci — Professional photo color grading tool with Lightroom-style adjustments including tone curves, HSL, color grading, and more." />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <title>Davinci — Color Grading Studio</title>
+    <script type="module" src="/src/main.ts"></script>
+  </head>
+  <body>
+    <div id="app">
+      <!-- Header -->
+      <header class="app-header" id="app-header">
+        <div class="header-left">
+          <div class="logo">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+              <circle cx="14" cy="14" r="13" stroke="url(#logoGrad)" stroke-width="2"/>
+              <path d="M8 14 C8 9 11 7 14 7 C17 7 20 9 20 14" stroke="#e96fff" stroke-width="2" stroke-linecap="round"/>
+              <path d="M8 14 C8 19 11 21 14 21 C17 21 20 19 20 14" stroke="#4fc3ff" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="14" cy="14" r="2.5" fill="#fff" opacity="0.9"/>
+              <defs>
+                <linearGradient id="logoGrad" x1="0" y1="0" x2="28" y2="28">
+                  <stop offset="0%" stop-color="#e96fff"/>
+                  <stop offset="100%" stop-color="#4fc3ff"/>
+                </linearGradient>
+              </defs>
+            </svg>
+            <span class="logo-text">Davinci</span>
+          </div>
+          <div class="file-info" id="file-info">
+            <span class="file-name" id="file-name">No image loaded</span>
+            <span class="file-dims" id="file-dims"></span>
+          </div>
+        </div>
+        <div class="header-center">
+          <div class="view-controls">
+            <button class="btn-icon" id="btn-before-after" title="Toggle Before/After (B)">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                <rect x="1" y="3" width="6" height="10" rx="1" opacity="0.5"/>
+                <rect x="9" y="3" width="6" height="10" rx="1"/>
+              </svg>
+            </button>
+            <button class="btn-icon" id="btn-fit" title="Fit to screen (F)">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M1 5V2h3M12 2h3v3M1 11v3h3M12 14h3v-3" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+              </svg>
+            </button>
+            <div class="zoom-display" id="zoom-display">100%</div>
+          </div>
+        </div>
+        <div class="header-right">
+          <button class="btn-secondary" id="btn-reset" title="Reset all adjustments">Reset</button>
+          <label class="btn-primary" id="btn-import" for="file-input">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+              <path d="M7 1v8M4 6l3 3 3-3M2 11h10" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Import
+          </label>
+          <input type="file" id="file-input" accept="image/*" style="display:none" />
+          <button class="btn-primary btn-export" id="btn-export">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+              <path d="M7 9V1M4 4l3-3 3 3M2 11h10" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Export
+          </button>
+        </div>
+      </header>
+
+      <!-- Main layout -->
+      <main class="app-main" id="app-main">
+        <!-- Left sidebar: panel navigation -->
+        <nav class="panel-nav" id="panel-nav">
+          <button class="panel-nav-item active" data-panel="basic" title="Basic">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
+              <rect x="2" y="2" width="5" height="5" rx="1"/>
+              <rect x="11" y="2" width="5" height="5" rx="1"/>
+              <rect x="2" y="11" width="5" height="5" rx="1"/>
+              <rect x="11" y="11" width="5" height="5" rx="1"/>
+            </svg>
+            <span>Basic</span>
+          </button>
+          <button class="panel-nav-item" data-panel="curve" title="Tone Curve">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M2 14 C5 14 6 10 9 9 C12 8 13 4 16 4" stroke-linecap="round"/>
+            </svg>
+            <span>Curve</span>
+          </button>
+          <button class="panel-nav-item" data-panel="hsl" title="HSL / Color">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <circle cx="9" cy="9" r="7" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M9 2 L9 16" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2,2"/>
+              <path d="M2 9 L16 9" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2,2"/>
+            </svg>
+            <span>HSL</span>
+          </button>
+          <button class="panel-nav-item" data-panel="grading" title="Color Grading">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+              <circle cx="5" cy="13" r="3"/>
+              <circle cx="13" cy="13" r="3"/>
+              <circle cx="9" cy="6" r="3"/>
+            </svg>
+            <span>Grading</span>
+          </button>
+          <button class="panel-nav-item" data-panel="detail" title="Detail">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="3" y="3" width="12" height="12" rx="2"/>
+              <path d="M6 9h6M9 6v6" stroke-linecap="round"/>
+            </svg>
+            <span>Detail</span>
+          </button>
+          <button class="panel-nav-item" data-panel="effects" title="Effects">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+              <circle cx="9" cy="9" r="7"/>
+              <circle cx="9" cy="9" r="4" opacity="0.5"/>
+              <circle cx="9" cy="9" r="1.5" fill="currentColor" stroke="none"/>
+            </svg>
+            <span>Effects</span>
+          </button>
+          <button class="panel-nav-item" data-panel="calibration" title="Calibration">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M9 2v3M9 13v3M2 9h3M13 9h3" stroke-linecap="round"/>
+              <circle cx="9" cy="9" r="4"/>
+              <circle cx="9" cy="9" r="1.5" fill="currentColor" stroke="none"/>
+            </svg>
+            <span>Calibr.</span>
+          </button>
+        </nav>
+
+        <!-- Canvas area -->
+        <section class="canvas-area" id="canvas-area">
+          <div class="canvas-wrapper" id="canvas-wrapper">
+            <div class="drop-zone" id="drop-zone">
+              <div class="drop-zone-content">
+                <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
+                  <rect x="4" y="4" width="48" height="48" rx="12" stroke="url(#dz-grad)" stroke-width="2" stroke-dasharray="6,4"/>
+                  <path d="M28 20v12M22 26l6 6 6-6" stroke="url(#dz-grad2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M18 36h20" stroke="url(#dz-grad2)" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+                  <defs>
+                    <linearGradient id="dz-grad" x1="4" y1="4" x2="52" y2="52">
+                      <stop offset="0%" stop-color="#e96fff" stop-opacity="0.6"/>
+                      <stop offset="100%" stop-color="#4fc3ff" stop-opacity="0.6"/>
+                    </linearGradient>
+                    <linearGradient id="dz-grad2" x1="18" y1="20" x2="38" y2="40">
+                      <stop offset="0%" stop-color="#e96fff"/>
+                      <stop offset="100%" stop-color="#4fc3ff"/>
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <p class="drop-title">Drop your image here</p>
+                <p class="drop-sub">or <label for="file-input" class="drop-link">click to browse</label></p>
+                <p class="drop-formats">JPEG · PNG · WebP · AVIF</p>
+              </div>
+            </div>
+            <canvas id="main-canvas" style="display:none"></canvas>
+          </div>
+        </section>
+
+        <!-- Right sidebar: controls -->
+        <aside class="controls-sidebar" id="controls-sidebar">
+          <div class="histogram-container" id="histogram-container">
+            <canvas id="histogram-canvas" width="256" height="80"></canvas>
+          </div>
+
+          <div class="panels-container" id="panels-container">
+            <!-- Basic Panel -->
+            <div class="panel active" id="panel-basic" data-panel="basic"></div>
+            <!-- Tone Curve Panel -->
+            <div class="panel" id="panel-curve" data-panel="curve"></div>
+            <!-- HSL Panel -->
+            <div class="panel" id="panel-hsl" data-panel="hsl"></div>
+            <!-- Color Grading Panel -->
+            <div class="panel" id="panel-grading" data-panel="grading"></div>
+            <!-- Detail Panel -->
+            <div class="panel" id="panel-detail" data-panel="detail"></div>
+            <!-- Effects Panel -->
+            <div class="panel" id="panel-effects" data-panel="effects"></div>
+            <!-- Calibration Panel -->
+            <div class="panel" id="panel-calibration" data-panel="calibration"></div>
+          </div>
+        </aside>
+      </main>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,80 @@
+// ============================================================
+// Reset & Base
+// ============================================================
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: $font-ui;
+  font-size: $text-base;
+  color: $text-primary;
+  background: $bg-base;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: inherit;
+  outline: none;
+
+  &:focus-visible {
+    outline: 2px solid $accent-purple;
+    outline-offset: 2px;
+    border-radius: $radius-sm;
+  }
+}
+
+input, select {
+  font-family: inherit;
+  font-size: inherit;
+  border: none;
+  outline: none;
+  background: none;
+  color: inherit;
+}
+
+label {
+  cursor: pointer;
+}
+
+canvas {
+  display: block;
+}
+
+// Scrollbar
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: $border-default;
+  border-radius: $radius-full;
+
+  &:hover {
+    background: $border-active;
+  }
+}
+
+// Selection
+::selection {
+  background: rgba($accent-purple, 0.3);
+}

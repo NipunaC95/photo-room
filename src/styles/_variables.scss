@@ -1,0 +1,89 @@
+// ============================================================
+// Design Tokens & Variables
+// ============================================================
+
+// -- Color Palette --
+$bg-base:         #0e0e10;
+$bg-elevated:     #161618;
+$bg-surface:      #1e1e21;
+$bg-surface-2:    #242428;
+$bg-surface-3:    #2a2a2f;
+$border-subtle:   rgba(255, 255, 255, 0.06);
+$border-default:  rgba(255, 255, 255, 0.10);
+$border-active:   rgba(255, 255, 255, 0.20);
+
+// -- Accent Gradient --
+$accent-purple:   #e96fff;
+$accent-blue:     #4fc3ff;
+$accent-gradient: linear-gradient(135deg, $accent-purple, $accent-blue);
+
+// -- Text --
+$text-primary:    #f0f0f3;
+$text-secondary:  #9898a8;
+$text-muted:      #5c5c6e;
+$text-disabled:   #3a3a48;
+
+// -- Slider Colors --
+$slider-track:    #2e2e35;
+$slider-fill:     linear-gradient(90deg, $accent-purple, $accent-blue);
+$slider-thumb:    #fff;
+
+// -- Curve Colors --
+$curve-rgb:       #d0d0d8;
+$curve-red:       #ff6b6b;
+$curve-green:     #6bff9e;
+$curve-blue:      #6baaff;
+
+// -- HSL Color Labels --
+$color-red:       #ff4d4d;
+$color-orange:    #ff8c42;
+$color-yellow:    #ffd166;
+$color-green:     #06d6a0;
+$color-aqua:      #00b4d8;
+$color-blue:      #4361ee;
+$color-purple:    #b5179e;
+$color-magenta:   #f72585;
+
+// -- Spacing --
+$space-1:  4px;
+$space-2:  8px;
+$space-3:  12px;
+$space-4:  16px;
+$space-5:  20px;
+$space-6:  24px;
+$space-8:  32px;
+
+// -- Border Radius --
+$radius-sm:  4px;
+$radius-md:  8px;
+$radius-lg:  12px;
+$radius-xl:  16px;
+$radius-full: 9999px;
+
+// -- Typography --
+$font-ui:    'Inter', system-ui, sans-serif;
+$font-mono:  'JetBrains Mono', monospace;
+
+// -- Font Sizes --
+$text-xs:   10px;
+$text-sm:   11px;
+$text-base: 12px;
+$text-md:   13px;
+$text-lg:   14px;
+$text-xl:   16px;
+
+// -- Transitions --
+$transition-fast:   0.1s ease;
+$transition-base:   0.2s ease;
+$transition-slow:   0.35s cubic-bezier(0.4, 0, 0.2, 1);
+
+// -- Layout --
+$header-height:     52px;
+$nav-width:         64px;
+$sidebar-width:     290px;
+
+// -- Shadows --
+$shadow-sm:   0 1px 3px rgba(0,0,0,0.4);
+$shadow-md:   0 4px 12px rgba(0,0,0,0.5);
+$shadow-lg:   0 8px 32px rgba(0,0,0,0.6);
+$glow-accent: 0 0 20px rgba(233, 111, 255, 0.15);
