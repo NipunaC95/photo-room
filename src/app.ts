@@ -212,19 +212,10 @@ export class App {
   }
 
   private updateHistogram(): void {
-    const ctx = this.mainCanvas.getContext('2d', { willReadFrequently: true });
-    if (!ctx) return;
-    const w = this.mainCanvas.width, h = this.mainCanvas.height;
-    if (w === 0 || h === 0) return;
-    // Sample at reduced resolution for performance
-    const sampleW = Math.min(w, 512);
-    const sampleH = Math.round(h * sampleW / w);
-    const tmpCanvas = document.createElement('canvas');
-    tmpCanvas.width = sampleW;
-    tmpCanvas.height = sampleH;
-    const tmpCtx = tmpCanvas.getContext('2d')!;
-    tmpCtx.drawImage(this.mainCanvas, 0, 0, sampleW, sampleH);
-    const imageData = tmpCtx.getImageData(0, 0, sampleW, sampleH);
+    // The main canvas has a WebGL context — use getImageDataSampled()
+    // which blits to a temp 2D canvas at reduced resolution for performance
+    const imageData = this.processor.getImageDataSampled(512);
+    if (!imageData) return;
     this.histogram.update(imageData);
   }
 
