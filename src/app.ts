@@ -3,6 +3,8 @@
 // ============================================================
 import { ImageProcessor, defaultAdjustments } from './modules/processor';
 import type { Adjustments } from './modules/processor';
+import { isRawOrTiff, decodeRawFile, createSampleRawData } from './modules/raw';
+import type { CameraMetadata } from './modules/raw';
 import { Histogram } from './modules/histogram';
 import { BasicPanel } from './panels/basic';
 import { ToneCurvePanel } from './panels/tonecurve';
@@ -35,6 +37,9 @@ export class App {
   private fileDims: HTMLElement;
   private zoomDisplay: HTMLElement;
   private beforeAfterBtn: HTMLButtonElement;
+  private bitDepthBadge: HTMLElement;
+  private exifChip: HTMLElement;
+  private exportFormatSelect: HTMLSelectElement;
 
   // State
   private zoom = 1;
@@ -49,6 +54,9 @@ export class App {
     this.fileDims = document.getElementById('file-dims')!;
     this.zoomDisplay = document.getElementById('zoom-display')!;
     this.beforeAfterBtn = document.getElementById('btn-before-after') as HTMLButtonElement;
+    this.bitDepthBadge = document.getElementById('bit-depth-badge')!;
+    this.exifChip = document.getElementById('exif-chip')!;
+    this.exportFormatSelect = document.getElementById('export-format-select') as HTMLSelectElement;
 
     this.processor = new ImageProcessor(this.mainCanvas);
     this.histogram = new Histogram(document.getElementById('histogram-canvas') as HTMLCanvasElement);
@@ -56,6 +64,12 @@ export class App {
     this.initPanels();
     this.bindEvents();
     this.bindNavigation();
+
+    // Sample RAW button
+    document.getElementById('btn-load-sample-raw')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.loadSampleRaw();
+    });
   }
 
   private initPanels(): void {
@@ -124,7 +138,7 @@ export class App {
       e.preventDefault();
       this.dropZone.classList.remove('drag-over');
       const file = e.dataTransfer?.files[0];
-      if (file && file.type.startsWith('image/')) this.loadFile(file);
+      if (file && (file.type.startsWith('image/') || isRawOrTiff(file))) this.loadFile(file);
     });
 
     // Reset
@@ -174,7 +188,12 @@ export class App {
     });
   }
 
-  private loadFile(file: File): void {
+  private async loadFile(file: File): Promise<void> {
+    if (isRawOrTiff(file)) {
+      await this.loadRawFile(file);
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = (e) => {
       const img = new Image();
@@ -184,11 +203,72 @@ export class App {
         this.processor.loadImage(img);
         this.fitToScreen();
         this.updateFileInfo(file, img);
+        this.updateBadges(10, null);
         this.scheduleHistogramUpdate();
       };
       img.src = e.target!.result as string;
     };
     reader.readAsDataURL(file);
+  }
+
+  private async loadRawFile(file: File): Promise<void> {
+    try {
+      this.fileName.textContent = `Loading ${file.name}...`;
+      const buffer = await file.arrayBuffer();
+      const decoded = await decodeRawFile(buffer, file.name);
+
+      this.dropZone.style.display = 'none';
+      this.mainCanvas.style.display = 'block';
+      this.processor.loadRawData(
+        decoded.width,
+        decoded.height,
+        decoded.floatData,
+        decoded.bitDepth,
+        decoded.metadata
+      );
+      this.fitToScreen();
+
+      this.fileName.textContent = file.name;
+      this.fileDims.textContent = `${decoded.width} × ${decoded.height}`;
+      this.updateBadges(decoded.bitDepth, decoded.metadata);
+      this.scheduleHistogramUpdate();
+    } catch (err) {
+      console.error('Failed to parse RAW file:', err);
+      alert(`Error reading RAW file: ${(err as Error).message}`);
+      this.fileName.textContent = 'Failed to load RAW image';
+    }
+  }
+
+  public loadSampleRaw(): void {
+    const sample = createSampleRawData();
+    this.dropZone.style.display = 'none';
+    this.mainCanvas.style.display = 'block';
+    this.processor.loadRawData(
+      sample.width,
+      sample.height,
+      sample.floatData,
+      sample.bitDepth,
+      sample.metadata
+    );
+    this.fitToScreen();
+
+    this.fileName.textContent = 'DSC04921_RAW.DNG';
+    this.fileDims.textContent = `${sample.width} × ${sample.height}`;
+    this.updateBadges(sample.bitDepth, sample.metadata);
+    this.scheduleHistogramUpdate();
+  }
+
+  private updateBadges(bitDepth: number, meta?: CameraMetadata | null): void {
+    this.bitDepthBadge.textContent = bitDepth >= 12 ? `${bitDepth}-bit RAW` : `${bitDepth}-bit P3`;
+    this.bitDepthBadge.classList.toggle('raw-mode', bitDepth >= 12);
+
+    if (meta && (meta.make || meta.model)) {
+      this.exifChip.style.display = 'inline-flex';
+      const cam = meta.model || meta.make || 'Camera RAW';
+      this.exifChip.innerHTML = `<span style="color:#e96fff;font-weight:600">${cam}</span> · ${meta.focalLength || ''} · ${meta.aperture || ''} · ${meta.shutterSpeed || ''} · ISO ${meta.iso || ''}`;
+    } else {
+      this.exifChip.style.display = 'none';
+    }
   }
 
   private updateFileInfo(file: File, img: HTMLImageElement): void {
@@ -277,11 +357,25 @@ export class App {
 
   private async exportImage(): Promise<void> {
     if (!this.processor.hasImage()) return;
-    const blob = await this.processor.getProcessedBlob(0.95);
+    const format = this.exportFormatSelect?.value || 'jpeg';
+    let blob: Blob;
+    let ext: string;
+
+    if (format === 'tiff') {
+      blob = await this.processor.get16BitTiffBlob();
+      ext = 'tif';
+    } else if (format === 'png') {
+      blob = await this.processor.getPngBlob();
+      ext = 'png';
+    } else {
+      blob = await this.processor.getProcessedBlob(0.95);
+      ext = 'jpg';
+    }
+
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `davinci-export-${Date.now()}.jpg`;
+    a.download = `davinci-export-${Date.now()}.${ext}`;
     a.click();
     URL.revokeObjectURL(url);
   }

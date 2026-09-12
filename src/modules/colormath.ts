@@ -180,6 +180,62 @@ export function buildCurveLUT(points: CurvePoint[]): Uint8Array {
   return lut;
 }
 
+/** 10-bit / 16-bit Float precision curve LUT (1024 samples) */
+export function buildCurveLUTFloat(points: CurvePoint[], size = 1024): Float32Array {
+  const lut = new Float32Array(size);
+
+  if (points.length < 2) {
+    for (let i = 0; i < size; i++) lut[i] = i / (size - 1);
+    return lut;
+  }
+
+  const sorted = [...points].sort((a, b) => a.x - b.x);
+  const n = sorted.length;
+  const h: number[] = [], delta: number[] = [], m: number[] = [];
+  for (let i = 0; i < n - 1; i++) {
+    h[i] = sorted[i + 1].x - sorted[i].x;
+    delta[i] = (sorted[i + 1].y - sorted[i].y) / h[i];
+  }
+  m[0] = delta[0];
+  m[n - 1] = delta[n - 2];
+  for (let i = 1; i < n - 1; i++) {
+    m[i] = (delta[i - 1] + delta[i]) / 2;
+  }
+  for (let i = 0; i < n - 1; i++) {
+    if (Math.abs(delta[i]) < 1e-10) {
+      m[i] = 0; m[i + 1] = 0;
+    } else {
+      const alpha = m[i] / delta[i];
+      const beta = m[i + 1] / delta[i];
+      const s = alpha * alpha + beta * beta;
+      if (s > 9) {
+        const t = 3 / Math.sqrt(s);
+        m[i] = t * alpha * delta[i];
+        m[i + 1] = t * beta * delta[i];
+      }
+    }
+  }
+
+  const denom = size - 1;
+  for (let px = 0; px < size; px++) {
+    const x = px / denom;
+    let seg = n - 2;
+    for (let i = 0; i < n - 1; i++) {
+      if (x <= sorted[i + 1].x) { seg = i; break; }
+    }
+    const t = (x - sorted[seg].x) / h[seg];
+    const t2 = t * t, t3 = t2 * t;
+    const y =
+      (2 * t3 - 3 * t2 + 1) * sorted[seg].y +
+      (t3 - 2 * t2 + t) * h[seg] * m[seg] +
+      (-2 * t3 + 3 * t2) * sorted[seg + 1].y +
+      (t3 - t2) * h[seg] * m[seg + 1];
+    lut[px] = clamp(y, 0, 1);
+  }
+
+  return lut;
+}
+
 // ---- HSL Color Range Targeting ----
 // Returns a weight [0,1] for how much a given hue falls within a color range
 // colorRanges: hue center in degrees for the 8 LR color labels

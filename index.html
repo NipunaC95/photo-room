@@ -35,6 +35,8 @@
             <span class="file-name" id="file-name">No image loaded</span>
             <span class="file-dims" id="file-dims"></span>
           </div>
+          <div class="bit-depth-badge" id="bit-depth-badge" title="Active bit-depth and color processing pipeline">10-bit P3</div>
+          <div class="exif-chip" id="exif-chip" style="display:none" title="Camera EXIF Information"></div>
         </div>
         <div class="header-center">
           <div class="view-controls">
@@ -60,13 +62,20 @@
             </svg>
             Import
           </label>
-          <input type="file" id="file-input" accept="image/*" style="display:none" />
-          <button class="btn-primary btn-export" id="btn-export">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
-              <path d="M7 9V1M4 4l3-3 3 3M2 11h10" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            Export
-          </button>
+          <input type="file" id="file-input" accept="image/*,.dng,.cr2,.cr3,.nef,.nrw,.arw,.srf,.sr2,.orf,.rw2,.pef,.raf,.tif,.tiff" style="display:none" />
+          <div class="export-dropdown-wrapper">
+            <button class="btn-primary btn-export" id="btn-export">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+                <path d="M7 9V1M4 4l3-3 3 3M2 11h10" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Export
+            </button>
+            <select class="export-format-select" id="export-format-select" title="Export Format">
+              <option value="jpeg">JPEG (95%)</option>
+              <option value="png">PNG (8-bit)</option>
+              <option value="tiff">TIFF (16-bit Master)</option>
+            </select>
+          </div>
         </div>
       </header>
 
@@ -152,7 +161,17 @@
                 </svg>
                 <p class="drop-title">Drop your image here</p>
                 <p class="drop-sub">or <label for="file-input" class="drop-link">click to browse</label></p>
-                <p class="drop-formats">JPEG · PNG · WebP · AVIF</p>
+                <p class="drop-formats">JPEG · PNG · WebP · RAW (.DNG · .CR2 · .NEF · .ARW) · 16-bit TIFF</p>
+                <div class="drop-actions">
+                  <button type="button" class="btn-sample-raw" id="btn-load-sample-raw">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
+                      <rect x="2" y="2" width="10" height="10" rx="2"/>
+                      <circle cx="5" cy="5" r="1" fill="currentColor"/>
+                      <path d="M2 10l3-3 2 2 3-3 2 2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Load Sample RAW (14-bit DNG)
+                  </button>
+                </div>
               </div>
             </div>
             <canvas id="main-canvas" style="display:none"></canvas>

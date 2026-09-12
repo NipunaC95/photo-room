@@ -4,8 +4,10 @@
 // Render time is <16ms regardless of image resolution.
 // ============================================================
 
-import { buildCurveLUT } from './colormath';
+import { buildCurveLUTFloat } from './colormath';
 import type { CurvePoint } from './colormath';
+import type { CameraMetadata } from './raw';
+import { encode16BitTiff } from './raw';
 
 // ============================================================
 // Adjustment State Interfaces (unchanged — same public API)
@@ -529,14 +531,14 @@ void main() {
     col = hslToRgb(hsl);
   }
 
-  // 10. Tone Curves — sample pre-baked LUT texture
-  // LUT is a 256×1 RGBA texture:
+  // 10. Tone Curves — sample pre-baked 10-bit/16-bit float LUT texture (1024 samples)
+  // LUT is a 1024×1 RGBA float texture with hardware linear interpolation:
   //   .r = r_channel_lut[ rgb_lut[i] ]
   //   .g = g_channel_lut[ rgb_lut[i] ]
   //   .b = b_channel_lut[ rgb_lut[i] ]
-  col.r = texture(u_curveLUT, vec2(col.r * (255.0/256.0) + 0.5/256.0, 0.5)).r;
-  col.g = texture(u_curveLUT, vec2(col.g * (255.0/256.0) + 0.5/256.0, 0.5)).g;
-  col.b = texture(u_curveLUT, vec2(col.b * (255.0/256.0) + 0.5/256.0, 0.5)).b;
+  col.r = texture(u_curveLUT, vec2(col.r * (1023.0 / 1024.0) + 0.5 / 1024.0, 0.5)).r;
+  col.g = texture(u_curveLUT, vec2(col.g * (1023.0 / 1024.0) + 0.5 / 1024.0, 0.5)).g;
+  col.b = texture(u_curveLUT, vec2(col.b * (1023.0 / 1024.0) + 0.5 / 1024.0, 0.5)).b;
 
   // 11. HSL per-color adjustments
   col = applyHSL(col);
@@ -616,16 +618,23 @@ export class ImageProcessor {
   private dirty = false;
   private uniforms = new Map<string, WebGLUniformLocation>();
   private grainSeed = 0;
+  private bitDepth = 8;
+  private rawMetadata: CameraMetadata | null = null;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
 
-    // Obtain WebGL2 context. preserveDrawingBuffer allows canvas.toDataURL() at any time.
-    const gl = canvas.getContext('webgl2', {
+    // Obtain WebGL2 context with wide-gamut Display P3 support where available
+    const gl = (canvas.getContext('webgl2', {
       preserveDrawingBuffer: true,
       alpha: false,
       antialias: false,
-    }) as WebGL2RenderingContext | null;
+      colorSpace: 'display-p3',
+    }) || canvas.getContext('webgl2', {
+      preserveDrawingBuffer: true,
+      alpha: false,
+      antialias: false,
+    })) as WebGL2RenderingContext | null;
 
     if (!gl) {
       throw new Error(
@@ -634,6 +643,19 @@ export class ImageProcessor {
       );
     }
     this.gl = gl;
+
+    // Check for float texture and color buffer extensions
+    gl.getExtension('EXT_color_buffer_float');
+    gl.getExtension('OES_texture_float_linear');
+
+    // Attempt to set wide display color space
+    try {
+      if ('drawingBufferColorSpace' in gl) {
+        (gl as any).drawingBufferColorSpace = 'display-p3';
+      }
+    } catch {
+      // Fallback to default color space
+    }
 
     // Build shader program
     this.program = createProgram(gl, VERT_SRC, FRAG_SRC);
@@ -675,8 +697,8 @@ export class ImageProcessor {
     gl.uniform1i(this.uniforms.get('u_image')!, 0);
     gl.uniform1i(this.uniforms.get('u_curveLUT')!, 1);
 
-    // Create curve LUT texture (256×1 RGBA, NEAREST filtering)
-    this.curveLUTTexture = createTexture(gl, gl.NEAREST);
+    // Create 10-bit curve LUT texture (1024×1 RGBA float with LINEAR filtering)
+    this.curveLUTTexture = createTexture(gl, gl.LINEAR);
     this.updateCurveLUT();
   }
 
@@ -684,23 +706,62 @@ export class ImageProcessor {
     const gl = this.gl;
     this.imageWidth  = img.naturalWidth;
     this.imageHeight = img.naturalHeight;
+    this.bitDepth = 10; // Promoted to 10-bit / 16F pipeline on GPU
+    this.rawMetadata = null;
 
     // Resize canvas to match image resolution
     this.canvas.width  = this.imageWidth;
     this.canvas.height = this.imageHeight;
     gl.viewport(0, 0, this.imageWidth, this.imageHeight);
 
-    // Upload image to GPU texture
+    // Upload image to GPU texture with RGBA16F internal precision
     if (!this.imageTexture) {
       this.imageTexture = createTexture(gl, gl.LINEAR);
     }
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, this.imageTexture);
-    // UNPACK_FLIP_Y_WEBGL flips the image vertically so UV(0,0)=top-left matches HTML
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+    // RGBA16F promotes 8-bit image to 16-bit half-float on upload
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, gl.RGBA, gl.UNSIGNED_BYTE, img);
 
     this.scheduleRender();
+  }
+
+  loadRawData(
+    width: number,
+    height: number,
+    floatData: Float32Array,
+    bitDepth = 14,
+    metadata?: CameraMetadata
+  ): void {
+    const gl = this.gl;
+    this.imageWidth  = width;
+    this.imageHeight = height;
+    this.bitDepth = bitDepth;
+    this.rawMetadata = metadata || null;
+
+    this.canvas.width  = this.imageWidth;
+    this.canvas.height = this.imageHeight;
+    gl.viewport(0, 0, this.imageWidth, this.imageHeight);
+
+    if (!this.imageTexture) {
+      this.imageTexture = createTexture(gl, gl.LINEAR);
+    }
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, this.imageTexture);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+    // Upload true high bit-depth normalized float data into RGBA16F texture
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, width, height, 0, gl.RGBA, gl.FLOAT, floatData);
+
+    this.scheduleRender();
+  }
+
+  getBitDepth(): number {
+    return this.bitDepth;
+  }
+
+  getMetadata(): CameraMetadata | null {
+    return this.rawMetadata;
   }
 
   setAdjustments(adj: Adjustments): void {
@@ -716,8 +777,6 @@ export class ImageProcessor {
     return this.imageTexture !== null && this.imageWidth > 0;
   }
 
-  // Returns a sampled ImageData for histogram computation
-  // Uses a temp 2D canvas to blit from the WebGL canvas (avoids readPixels overhead)
   getImageDataSampled(maxDim: number): ImageData | null {
     if (!this.hasImage()) return null;
     const scale = Math.min(1, maxDim / Math.max(this.canvas.width, this.canvas.height));
@@ -738,6 +797,39 @@ export class ImageProcessor {
     return new Promise(resolve => {
       this.canvas.toBlob(blob => resolve(blob!), 'image/jpeg', quality);
     });
+  }
+
+  getPngBlob(): Promise<Blob> {
+    return new Promise(resolve => {
+      this.canvas.toBlob(blob => resolve(blob!), 'image/png');
+    });
+  }
+
+  async get16BitTiffBlob(): Promise<Blob> {
+    if (!this.hasImage()) throw new Error('No image loaded');
+    const w = this.canvas.width;
+    const h = this.canvas.height;
+    const gl = this.gl;
+
+    // Render to ensure frame is fresh
+    this.render();
+
+    // Read back rendered pixels from WebGL drawing buffer
+    const pixels = new Uint8Array(w * h * 4);
+    gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+
+    // Flip Y (WebGL coordinates start at bottom-left)
+    const floatData = new Float32Array(w * h * 4);
+    const inv255 = 1.0 / 255.0;
+    for (let y = 0; y < h; y++) {
+      const srcRow = (h - 1 - y) * w * 4;
+      const dstRow = y * w * 4;
+      for (let x = 0; x < w * 4; x++) {
+        floatData[dstRow + x] = pixels[srcRow + x] * inv255;
+      }
+    }
+
+    return encode16BitTiff(floatData, w, h);
   }
 
   // --------------------------------------------------------
@@ -776,30 +868,33 @@ export class ImageProcessor {
     gl.bindVertexArray(null);
   }
 
-  // Build the tone-curve LUT on the CPU, pack 3 channels into one
-  // 256×1 RGBA texture, upload to GPU once per adjustment change.
+  // Build the 10-bit / 16-bit tone-curve LUT on the CPU, pack 3 channels into one
+  // 1024×1 RGBA float texture, upload to GPU with linear filtering for continuous interpolation.
   private updateCurveLUT(): void {
     const gl  = this.gl;
     const adj = this.adjustments.curves;
+    const size = 1024;
 
-    const lutRgb = buildCurveLUT(adj.rgb);
-    const lutR   = buildCurveLUT(adj.r);
-    const lutG   = buildCurveLUT(adj.g);
-    const lutB   = buildCurveLUT(adj.b);
+    const lutRgb = buildCurveLUTFloat(adj.rgb, size);
+    const lutR   = buildCurveLUTFloat(adj.r, size);
+    const lutG   = buildCurveLUTFloat(adj.g, size);
+    const lutB   = buildCurveLUTFloat(adj.b, size);
 
-    // Combined: r_ch[rgb[i]], g_ch[rgb[i]], b_ch[rgb[i]]
-    const data = new Uint8Array(256 * 4);
-    for (let i = 0; i < 256; i++) {
+    // Combined float LUT: 1024 x 1 RGBA Float32Array
+    const data = new Float32Array(size * 4);
+    const denom = size - 1;
+    for (let i = 0; i < size; i++) {
       const mapped = lutRgb[i];
-      data[i * 4 + 0] = lutR[mapped]; // .r channel in shader
-      data[i * 4 + 1] = lutG[mapped]; // .g channel in shader
-      data[i * 4 + 2] = lutB[mapped]; // .b channel in shader
-      data[i * 4 + 3] = 255;
+      const rIdx = Math.min(denom, Math.max(0, Math.round(mapped * denom)));
+      data[i * 4 + 0] = lutR[rIdx];
+      data[i * 4 + 1] = lutG[rIdx];
+      data[i * 4 + 2] = lutB[rIdx];
+      data[i * 4 + 3] = 1.0;
     }
 
     gl.activeTexture(gl.TEXTURE1);
     gl.bindTexture(gl.TEXTURE_2D, this.curveLUTTexture);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 256, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, size, 1, 0, gl.RGBA, gl.FLOAT, data);
   }
 
   private uploadUniforms(): void {

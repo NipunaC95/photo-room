@@ -90,6 +90,49 @@
   font-family: $font-mono;
 }
 
+// Bit depth badge & EXIF chip
+.bit-depth-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: $radius-full;
+  font-size: 10px;
+  font-weight: 600;
+  font-family: $font-mono;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: rgba($accent-blue, 0.12);
+  color: $accent-blue;
+  border: 1px solid rgba($accent-blue, 0.28);
+  box-shadow: 0 0 10px rgba($accent-blue, 0.12);
+  white-space: nowrap;
+
+  &.raw-mode {
+    background: rgba($accent-purple, 0.14);
+    color: $accent-purple;
+    border-color: rgba($accent-purple, 0.35);
+    box-shadow: 0 0 12px rgba($accent-purple, 0.16);
+  }
+}
+
+.exif-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: $radius-sm;
+  font-size: 11px;
+  font-family: $font-mono;
+  color: $text-secondary;
+  background: $bg-surface;
+  border: 1px solid $border-subtle;
+  white-space: nowrap;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 // View controls
 .view-controls {
   display: flex;
@@ -180,6 +223,54 @@
       background: rgba($accent-purple, 0.08);
       box-shadow: none;
     }
+  }
+}
+
+.export-dropdown-wrapper {
+  display: flex;
+  align-items: center;
+  background: $bg-surface-2;
+  border: 1px solid $border-default;
+  border-radius: $radius-md;
+  overflow: hidden;
+  transition: border-color $transition-base;
+
+  &:hover {
+    border-color: $accent-purple;
+  }
+
+  .btn-export {
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 $space-3 !important;
+    height: 32px !important;
+    background: transparent !important;
+
+    &:hover {
+      background: rgba($accent-purple, 0.08) !important;
+    }
+  }
+}
+
+.export-format-select {
+  background: transparent;
+  color: $text-secondary;
+  border: none;
+  border-left: 1px solid $border-subtle;
+  font-size: 11px;
+  font-family: $font-mono;
+  padding: 0 $space-2;
+  height: 32px;
+  cursor: pointer;
+  outline: none;
+
+  &:hover {
+    color: $text-primary;
+  }
+
+  option {
+    background: $bg-elevated;
+    color: $text-primary;
   }
 }
 
@@ -324,6 +415,40 @@
   color: $text-disabled;
   font-family: $font-mono;
   letter-spacing: 0.08em;
+}
+
+.drop-actions {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  margin-top: $space-2;
+}
+
+.btn-sample-raw {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  padding: 8px 18px;
+  border-radius: $radius-full;
+  font-size: $text-sm;
+  font-weight: 500;
+  color: $accent-purple;
+  background: rgba($accent-purple, 0.08);
+  border: 1px solid rgba($accent-purple, 0.28);
+  cursor: pointer;
+  transition: all $transition-base;
+
+  &:hover {
+    background: rgba($accent-purple, 0.16);
+    border-color: $accent-purple;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba($accent-purple, 0.2);
+  }
+
+  svg {
+    stroke: currentColor;
+    flex-shrink: 0;
+  }
 }
 
 // Main canvas
