@@ -135,8 +135,8 @@ in vec2 a_position;
 out vec2 v_uv;
 
 void main() {
-  // NDC [-1,1] → texture UV [0,1], Y flipped to match image orientation
-  v_uv = vec2(a_position.x * 0.5 + 0.5, 0.5 - a_position.y * 0.5);
+  // NDC [-1,1] → texture UV [0,1]
+  v_uv = a_position * 0.5 + 0.5;
   gl_Position = vec4(a_position, 0.0, 1.0);
 }
 `;
@@ -714,15 +714,15 @@ export class ImageProcessor {
     this.canvas.height = this.imageHeight;
     gl.viewport(0, 0, this.imageWidth, this.imageHeight);
 
-    // Upload image to GPU texture with RGBA16F internal precision
-    if (!this.imageTexture) {
-      this.imageTexture = createTexture(gl, gl.LINEAR);
+    // Clean up previous texture to prevent format/dimension conflicts
+    if (this.imageTexture) {
+      gl.deleteTexture(this.imageTexture);
     }
+    this.imageTexture = createTexture(gl, gl.LINEAR);
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, this.imageTexture);
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-    // RGBA16F promotes 8-bit image to 16-bit half-float on upload
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, gl.RGBA, gl.UNSIGNED_BYTE, img);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
 
     this.scheduleRender();
   }
@@ -744,14 +744,23 @@ export class ImageProcessor {
     this.canvas.height = this.imageHeight;
     gl.viewport(0, 0, this.imageWidth, this.imageHeight);
 
-    if (!this.imageTexture) {
-      this.imageTexture = createTexture(gl, gl.LINEAR);
+    // Clean up previous texture
+    if (this.imageTexture) {
+      gl.deleteTexture(this.imageTexture);
     }
+    this.imageTexture = createTexture(gl, gl.LINEAR);
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, this.imageTexture);
-    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+    // Flip rows so row 0 (top of image) is at UV y = 1.0 (top of screen)
+    const flipped = new Float32Array(width * height * 4);
+    const rowFloats = width * 4;
+    for (let y = 0; y < height; y++) {
+      const srcRow = y * rowFloats;
+      const dstRow = (height - 1 - y) * rowFloats;
+      flipped.set(floatData.subarray(srcRow, srcRow + rowFloats), dstRow);
+    }
     // Upload true high bit-depth normalized float data into RGBA16F texture
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, width, height, 0, gl.RGBA, gl.FLOAT, floatData);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, width, height, 0, gl.RGBA, gl.FLOAT, flipped);
 
     this.scheduleRender();
   }
