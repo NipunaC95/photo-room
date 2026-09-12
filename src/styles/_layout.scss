@@ -1,6 +1,7 @@
 // ============================================================
 // Layout
 // ============================================================
+@use 'sass:color';
 @use 'variables' as *;
 
 #app {
@@ -314,7 +315,7 @@
   text-underline-offset: 2px;
 
   &:hover {
-    color: lighten($accent-purple, 10%);
+    color: color.adjust($accent-purple, $lightness: 10%);
   }
 }
 
