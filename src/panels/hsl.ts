@@ -1,7 +1,7 @@
 // ============================================================
 // HSL / Color Panel — per-color hue/saturation/luminance
 // ============================================================
-import { HSLColor } from '../modules/processor';
+import type { HSLColor } from '../modules/processor';
 
 const COLOR_DEFS = [
   { name: 'Red',     color: '#ff4d4d' },

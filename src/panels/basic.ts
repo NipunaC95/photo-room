@@ -1,7 +1,7 @@
 // ============================================================
 // Basic Panel
 // ============================================================
-import { BasicAdjustments } from '../modules/processor';
+import type { BasicAdjustments } from '../modules/processor';
 
 interface SliderDef {
   key: keyof BasicAdjustments;

@@ -3,13 +3,11 @@
 // ============================================================
 
 export class Histogram {
-  private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
   private width: number;
   private height: number;
 
   constructor(canvas: HTMLCanvasElement) {
-    this.canvas = canvas;
     this.ctx = canvas.getContext('2d')!;
     this.width = canvas.width;
     this.height = canvas.height;
@@ -56,7 +54,6 @@ export class Histogram {
 
     if (maxVal === 0) return;
 
-    const barW = w / 256;
 
     // Draw luminance (dark gray background layer)
     this.drawChannel(ctx, lumBins, maxVal, w, h, 'rgba(180,180,200,0.15)');

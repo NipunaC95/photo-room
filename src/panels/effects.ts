@@ -1,7 +1,7 @@
 // ============================================================
 // Effects Panel — Vignette + Grain
 // ============================================================
-import { EffectsAdjustments } from '../modules/processor';
+import type { EffectsAdjustments } from '../modules/processor';
 
 interface SliderDef {
   key: keyof EffectsAdjustments;

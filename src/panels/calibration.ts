@@ -1,7 +1,7 @@
 // ============================================================
 // Calibration Panel — Camera Profile Calibration
 // ============================================================
-import { CalibrationAdjustments } from '../modules/processor';
+import type { CalibrationAdjustments } from '../modules/processor';
 
 interface SliderDef {
   key: keyof CalibrationAdjustments;

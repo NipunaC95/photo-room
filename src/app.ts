@@ -1,10 +1,12 @@
 // ============================================================
 // App — Root application controller
 // ============================================================
-import { ImageProcessor, Adjustments, defaultAdjustments } from './modules/processor';
+import { ImageProcessor, defaultAdjustments } from './modules/processor';
+import type { Adjustments } from './modules/processor';
 import { Histogram } from './modules/histogram';
 import { BasicPanel } from './panels/basic';
-import { ToneCurvePanel, CurveAdjustments } from './panels/tonecurve';
+import { ToneCurvePanel } from './panels/tonecurve';
+import type { CurveAdjustments } from './panels/tonecurve';
 import { HSLPanel } from './panels/hsl';
 import { ColorGradingPanel } from './panels/colorgrading';
 import { DetailPanel } from './panels/detail';

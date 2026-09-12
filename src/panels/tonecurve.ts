@@ -1,7 +1,8 @@
 // ============================================================
 // Tone Curve Panel — interactive bezier curve editor
 // ============================================================
-import { CurvePoint, buildCurveLUT } from '../modules/colormath';
+import type { CurvePoint } from '../modules/colormath';
+import { buildCurveLUT } from '../modules/colormath';
 
 type Channel = 'rgb' | 'r' | 'g' | 'b';
 

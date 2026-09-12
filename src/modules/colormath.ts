@@ -312,7 +312,6 @@ export function applyCalibration(
   // Shadow tint: adds green/magenta tint to darks
   if (shadowTint !== 0 && l < 0.5) {
     const shadowMask = (0.5 - l) * 2;
-    const tintH = shadowTint > 0 ? 120 / 360 : 300 / 360; // green or magenta
     h = h + shadowMask * (Math.abs(shadowTint) / 100) * 0.02 * Math.sign(shadowTint);
   }
 

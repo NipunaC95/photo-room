@@ -1,7 +1,7 @@
 // ============================================================
 // Detail Panel — Sharpening + Noise Reduction
 // ============================================================
-import { DetailAdjustments } from '../modules/processor';
+import type { DetailAdjustments } from '../modules/processor';
 
 interface SliderDef {
   key: keyof DetailAdjustments;

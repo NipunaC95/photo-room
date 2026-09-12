@@ -1,7 +1,7 @@
 // ============================================================
 // Color Grading Panel — color wheels for shadows/midtones/highlights
 // ============================================================
-import { ColorGradingAdjustments, ColorGradingWheel } from '../modules/processor';
+import type { ColorGradingAdjustments, ColorGradingWheel } from '../modules/processor';
 
 const WHEEL_SIZE = 100; // canvas px (display will be 100% width via CSS)
 

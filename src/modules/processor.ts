@@ -6,8 +6,9 @@ import {
   rgbToHsl, hslToRgb, luminance,
   highlightShadowTonemap, sigmoidContrast,
   applyDehaze, applyVibrance, applyCalibration,
-  hueWeight, HSL_COLOR_RANGES, CurvePoint,
+  hueWeight, HSL_COLOR_RANGES,
 } from './colormath';
+import type { CurvePoint } from './colormath';
 
 // ---------- Adjustment State ----------
 export interface BasicAdjustments {
@@ -178,7 +179,7 @@ export class ImageProcessor {
     const srcD = src.data;
     const outD = output.data;
     const adj = this.adjustments;
-    const { basic, curves, hsl, grading, detail, effects, calibration } = adj;
+    const { basic, curves, hsl, grading, effects, calibration } = adj;
 
     // Pre-build LUTs
     const lutRgb = buildCurveLUT(curves.rgb);
@@ -400,7 +401,6 @@ function applyVignette(
   effects: EffectsAdjustments
 ): void {
   const cx = w / 2, cy = h / 2;
-  const maxDist = Math.sqrt(cx * cx + cy * cy);
   const midpoint = effects.vignetteMidpoint / 100;
   const feather = effects.vignetteFeather / 100;
   const amount = effects.vignetteAmount / 100;
@@ -429,7 +429,7 @@ function applyVignette(
 
 // ---------- Film Grain ----------
 function applyGrain(
-  data: Uint8ClampedArray, w: number, h: number,
+  data: Uint8ClampedArray, _w: number, _h: number,
   effects: EffectsAdjustments
 ): void {
   const amount = effects.grainAmount / 100;
