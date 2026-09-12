@@ -1,7 +1,11 @@
 // ============================================================
 // Main SCSS Entry — imports all partials
 // ============================================================
+
+// Import variables first (makes them available in this file)
 @use 'variables' as *;
+
+// Import all partials (each one uses variables independently)
 @use 'reset';
 @use 'layout';
 @use 'panels';
