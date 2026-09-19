@@ -726,7 +726,17 @@ export class ImageProcessor {
     this.maskOpacity = opacity;
 
     if (!maskCanvas) {
-      this.useMask = 0;
+      if (opacity < 0.999) {
+        this.useMask = 1;
+        if (!this.maskTexture) {
+          this.maskTexture = createTexture(gl, gl.LINEAR);
+        }
+        gl.activeTexture(gl.TEXTURE2);
+        gl.bindTexture(gl.TEXTURE_2D, this.maskTexture);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([255, 255, 255, 255]));
+      } else {
+        this.useMask = 0;
+      }
       return;
     }
 
@@ -1036,7 +1046,10 @@ export class ImageProcessor {
       const isLast = (i === enabledLayers.length - 1);
 
       let maskCanvas: HTMLCanvasElement | null = null;
-      const isCurrentActiveLayer = (layer.id === this.layeredAdjustments.activeLayerId);
+      const activeId = this.layeredAdjustments?.activeLayerId;
+      const activeMaskId = this.layeredAdjustments?.activeMaskId;
+      const isCurrentActiveLayer = (layer.id === activeId) ||
+        (layer.masks && layer.masks.some(m => m.id === activeId || m.id === activeMaskId));
 
       if (isCurrentActiveLayer && this.activeMaskCanvas) {
         maskCanvas = this.activeMaskCanvas;

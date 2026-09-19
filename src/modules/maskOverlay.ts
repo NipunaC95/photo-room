@@ -45,10 +45,6 @@ export class MaskOverlay {
     this.overlayCanvas.className = 'mask-overlay-canvas';
     this.overlayCanvas.style.cssText = `
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
       pointer-events: none;
       z-index: 10;
     `;
@@ -186,22 +182,29 @@ export class MaskOverlay {
   }
 
   public resize(): void {
-    const rect = this.mainCanvas.getBoundingClientRect();
-    if (rect.width > 0 && rect.height > 0) {
-      this.overlayCanvas.width = rect.width;
-      this.overlayCanvas.height = rect.height;
-      this.overlayCanvas.style.width = `${rect.width}px`;
-      this.overlayCanvas.style.height = `${rect.height}px`;
+    const mainRect = this.mainCanvas.getBoundingClientRect();
+    const wrapperRect = this.wrapper.getBoundingClientRect();
 
-      if (this.offscreenMaskCanvas.width !== Math.round(rect.width)) {
+    if (mainRect.width > 0 && mainRect.height > 0) {
+      const top = mainRect.top - wrapperRect.top;
+      const left = mainRect.left - wrapperRect.left;
+
+      this.overlayCanvas.width = Math.round(mainRect.width);
+      this.overlayCanvas.height = Math.round(mainRect.height);
+      this.overlayCanvas.style.top = `${top}px`;
+      this.overlayCanvas.style.left = `${left}px`;
+      this.overlayCanvas.style.width = `${Math.round(mainRect.width)}px`;
+      this.overlayCanvas.style.height = `${Math.round(mainRect.height)}px`;
+
+      if (this.offscreenMaskCanvas.width !== Math.round(mainRect.width) || this.offscreenMaskCanvas.height !== Math.round(mainRect.height)) {
         const temp = document.createElement('canvas');
         temp.width = this.offscreenMaskCanvas.width;
         temp.height = this.offscreenMaskCanvas.height;
         temp.getContext('2d')?.drawImage(this.offscreenMaskCanvas, 0, 0);
 
-        this.offscreenMaskCanvas.width = Math.round(rect.width);
-        this.offscreenMaskCanvas.height = Math.round(rect.height);
-        this.offscreenCtx.drawImage(temp, 0, 0, rect.width, rect.height);
+        this.offscreenMaskCanvas.width = Math.round(mainRect.width);
+        this.offscreenMaskCanvas.height = Math.round(mainRect.height);
+        this.offscreenCtx.drawImage(temp, 0, 0, mainRect.width, mainRect.height);
       }
     }
     this.render();
@@ -210,8 +213,8 @@ export class MaskOverlay {
   public getMaskCanvas(): HTMLCanvasElement | null {
     if (!this.activeMask || !this.activeMask.enabled) return null;
 
-    const w = Math.max(10, this.overlayCanvas.width || 800);
-    const h = Math.max(10, this.overlayCanvas.height || 600);
+    const w = Math.max(10, Math.round(this.mainCanvas.width || this.overlayCanvas.width || 800));
+    const h = Math.max(10, Math.round(this.mainCanvas.height || this.overlayCanvas.height || 600));
 
     const canvas = document.createElement('canvas');
     canvas.width = w;
