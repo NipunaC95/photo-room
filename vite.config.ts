@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  base: '/photo-room/',
+  base: './',
   css: {
     preprocessorOptions: {
       scss: {
