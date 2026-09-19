@@ -1,6 +1,6 @@
 // ============================================================
 // App — Root application controller with multi-photo batch,
-// filmstrip navigation, and davinci_edits.json persistence
+// filmstrip navigation, Adjustment Layers, and davinci_edits.json persistence
 // ============================================================
 import { ImageProcessor, defaultAdjustments } from './modules/processor';
 import type { Adjustments } from './modules/processor';
@@ -16,7 +16,10 @@ import { DetailPanel } from './panels/detail';
 import { EffectsPanel } from './panels/effects';
 import { CalibrationPanel } from './panels/calibration';
 import { CropPanel, defaultCropAdjustments } from './panels/crop';
+import { LayersPanel } from './panels/layersPanel';
 import { FolderManager } from './modules/folderManager';
+import type { LayeredAdjustments } from './modules/layers';
+import { createDefaultLayeredAdjustments, flattenAdjustments } from './modules/layers';
 
 import type { BatchItem } from './modules/folderManager';
 import { Filmstrip } from './modules/filmstrip';
@@ -29,6 +32,7 @@ export class App {
   private filmstrip: Filmstrip;
   private batchExport: BatchExport;
 
+  private layeredAdjustments: LayeredAdjustments = createDefaultLayeredAdjustments();
   private adjustments: Adjustments = defaultAdjustments();
 
   // Panels
@@ -40,7 +44,7 @@ export class App {
   private effectsPanel!: EffectsPanel;
   private calibrationPanel!: CalibrationPanel;
   private cropPanel!: CropPanel;
-
+  private layersPanel!: LayersPanel;
 
   // UI refs
   private mainCanvas: HTMLCanvasElement;
@@ -104,17 +108,17 @@ export class App {
         this.handleOpenFolder();
       },
       onCopySettings: () => {
-        this.folderManager.setCopiedAdjustments(this.adjustments);
-        this.showToast('Adjustments copied');
+        this.folderManager.setCopiedLayered(this.layeredAdjustments);
+        this.showToast('Layered adjustments copied');
       },
       onPasteSettings: () => {
-        const copied = this.folderManager.getCopiedAdjustments();
+        const copied = this.folderManager.getCopiedLayered();
         if (copied) {
-          this.adjustments = copied;
-          this.syncPanelsToAdjustments();
-          this.process();
-          this.folderManager.updateActiveAdjustments(this.adjustments);
-          this.showToast('Adjustments pasted');
+          this.layeredAdjustments = copied;
+          this.layersPanel.updateState(this.layeredAdjustments);
+          this.syncPanelsToActiveLayer();
+          this.onLayerStateChanged();
+          this.showToast('Layered adjustments pasted');
         } else {
           this.showToast('No copied adjustments found');
         }
@@ -124,7 +128,6 @@ export class App {
       },
     });
 
-
     this.batchExport = new BatchExport(document.getElementById('batch-export-modal')!);
 
     this.initPanels();
@@ -133,56 +136,78 @@ export class App {
   }
 
   private initPanels(): void {
+    this.layersPanel = new LayersPanel(
+      document.getElementById('panel-layers')!,
+      this.layeredAdjustments,
+      (newLayeredState) => {
+        this.layeredAdjustments = newLayeredState;
+        this.onLayerStateChanged();
+      },
+      (activeLayerId) => {
+        this.layeredAdjustments.activeLayerId = activeLayerId;
+        this.syncPanelsToActiveLayer();
+      }
+    );
+
+    const getTarget = (): Adjustments => this.getActiveTargetAdjustments();
+
     this.basicPanel = new BasicPanel(
       document.getElementById('panel-basic')!,
-      this.adjustments.basic,
-      (v) => { this.adjustments.basic = v; this.onAdjustmentsChanged(); }
+      getTarget().basic,
+      (v) => { getTarget().basic = v; this.onAdjustmentsChanged(); }
     );
 
     this.curvePanel = new ToneCurvePanel(
       document.getElementById('panel-curve')!,
-      this.adjustments.curves as CurveAdjustments,
-      (v) => { this.adjustments.curves = v; this.onAdjustmentsChanged(); }
+      getTarget().curves as CurveAdjustments,
+      (v) => { getTarget().curves = v; this.onAdjustmentsChanged(); }
     );
 
     this.hslPanel = new HSLPanel(
       document.getElementById('panel-hsl')!,
-      this.adjustments.hsl,
-      (v) => { this.adjustments.hsl = v; this.onAdjustmentsChanged(); }
+      getTarget().hsl,
+      (v) => { getTarget().hsl = v; this.onAdjustmentsChanged(); }
     );
 
     this.gradingPanel = new ColorGradingPanel(
       document.getElementById('panel-grading')!,
-      this.adjustments.grading,
-      (v) => { this.adjustments.grading = v; this.onAdjustmentsChanged(); }
+      getTarget().grading,
+      (v) => { getTarget().grading = v; this.onAdjustmentsChanged(); }
     );
 
     this.detailPanel = new DetailPanel(
       document.getElementById('panel-detail')!,
-      this.adjustments.detail,
-      (v) => { this.adjustments.detail = v; this.onAdjustmentsChanged(); }
+      getTarget().detail,
+      (v) => { getTarget().detail = v; this.onAdjustmentsChanged(); }
     );
 
     this.effectsPanel = new EffectsPanel(
       document.getElementById('panel-effects')!,
-      this.adjustments.effects,
-      (v) => { this.adjustments.effects = v; this.onAdjustmentsChanged(); }
+      getTarget().effects,
+      (v) => { getTarget().effects = v; this.onAdjustmentsChanged(); }
     );
 
     this.calibrationPanel = new CalibrationPanel(
       document.getElementById('panel-calibration')!,
-      this.adjustments.calibration,
-      (v) => { this.adjustments.calibration = v; this.onAdjustmentsChanged(); }
+      getTarget().calibration,
+      (v) => { getTarget().calibration = v; this.onAdjustmentsChanged(); }
     );
 
     this.cropPanel = new CropPanel(
       document.getElementById('panel-crop')!,
-      this.adjustments.crop || defaultCropAdjustments(),
-      (v) => { this.adjustments.crop = v; this.onAdjustmentsChanged(); }
+      getTarget().crop || defaultCropAdjustments(),
+      (v) => { getTarget().crop = v; this.onAdjustmentsChanged(); }
     );
   }
 
-
+  private getActiveTargetAdjustments(): Adjustments {
+    const activeId = this.layeredAdjustments.activeLayerId || 'base';
+    if (activeId === 'base') {
+      return this.layeredAdjustments.base;
+    }
+    const layer = (this.layeredAdjustments.layers || []).find(l => l.id === activeId);
+    return layer ? layer.adjustments : this.layeredAdjustments.base;
+  }
 
   private bindEvents(): void {
     // Open Folder buttons
@@ -292,7 +317,6 @@ export class App {
   private async handleOpenFolder(): Promise<void> {
     const opened = await this.folderManager.openDirectoryPicker();
     if (!opened) {
-      // Fallback to HTML input webkitdirectory
       this.folderInput.click();
     }
   }
@@ -313,14 +337,23 @@ export class App {
   }
 
   private onAdjustmentsChanged(): void {
+    this.adjustments = flattenAdjustments(this.layeredAdjustments);
     this.process();
-    this.folderManager.updateActiveAdjustments(this.adjustments);
+    this.folderManager.updateActiveLayeredAdjustments(this.layeredAdjustments);
+  }
+
+  private onLayerStateChanged(): void {
+    this.adjustments = flattenAdjustments(this.layeredAdjustments);
+    this.process();
+    this.folderManager.updateActiveLayeredAdjustments(this.layeredAdjustments);
   }
 
   private async loadBatchItem(item: BatchItem): Promise<void> {
     this.activeItem = item;
-    this.adjustments = JSON.parse(JSON.stringify(item.adjustments));
-    this.syncPanelsToAdjustments();
+    this.layeredAdjustments = JSON.parse(JSON.stringify(item.layeredAdjustments));
+    this.adjustments = flattenAdjustments(this.layeredAdjustments);
+    this.layersPanel.updateState(this.layeredAdjustments);
+    this.syncPanelsToActiveLayer();
 
     if (item.isRaw) {
       await this.loadRawFile(item.file);
@@ -398,12 +431,14 @@ export class App {
     this.fileName.textContent = 'DSC04921_RAW.DNG';
     this.fileDims.textContent = `${sample.width} × ${sample.height}`;
     this.updateBadges(sample.bitDepth, sample.metadata);
+    this.layeredAdjustments = createDefaultLayeredAdjustments();
     this.adjustments = defaultAdjustments();
-    this.syncPanelsToAdjustments();
+    this.layersPanel.updateState(this.layeredAdjustments);
+    this.syncPanelsToActiveLayer();
     this.process();
   }
 
-  /** Load a sample gallery of multiple photos for instant demonstration */
+  /** Load a sample gallery of multiple photos */
   public async loadSampleGallery(): Promise<void> {
     const samples: { name: string; render: (ctx: CanvasRenderingContext2D, w: number, h: number) => void }[] = [
       {
@@ -496,8 +531,8 @@ export class App {
     this.fileDims.textContent = `${img.naturalWidth} × ${img.naturalHeight}`;
   }
 
-  private syncPanelsToAdjustments(): void {
-    const adj = this.adjustments;
+  private syncPanelsToActiveLayer(): void {
+    const adj = this.getActiveTargetAdjustments();
     this.basicPanel.update(adj.basic);
     this.curvePanel.update(adj.curves as CurveAdjustments);
     this.hslPanel.update(adj.hsl);
@@ -507,7 +542,6 @@ export class App {
     this.calibrationPanel.update(adj.calibration);
     if (adj.crop) this.cropPanel.update(adj.crop);
   }
-
 
   private process(): void {
     if (!this.processor.hasImage()) return;
@@ -574,10 +608,12 @@ export class App {
   }
 
   private resetAll(): void {
+    this.layeredAdjustments = createDefaultLayeredAdjustments();
     this.adjustments = defaultAdjustments();
-    this.syncPanelsToAdjustments();
+    this.layersPanel.updateState(this.layeredAdjustments);
+    this.syncPanelsToActiveLayer();
     this.process();
-    this.folderManager.updateActiveAdjustments(this.adjustments);
+    this.folderManager.updateActiveLayeredAdjustments(this.layeredAdjustments);
   }
 
   private async exportImage(): Promise<void> {
@@ -620,7 +656,7 @@ export class App {
       background: rgba(22, 22, 24, 0.9);
       backdrop-filter: blur(8px);
       color: #0a84ff;
-      border: 1px solid rgba(233, 111, 255, 0.3);
+      border: 1px solid rgba(10, 132, 255, 0.3);
       padding: 6px 16px;
       border-radius: 9999px;
       font-size: 11px;

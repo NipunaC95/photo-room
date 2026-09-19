@@ -461,14 +461,17 @@ export class FolderManager {
     if (isRaw) {
       try {
         const { decodeRawFile } = await import('./raw');
-        const rawData = await decodeRawFile(file);
+        const buffer = await file.arrayBuffer();
+        const rawData = await decodeRawFile(buffer, file.name);
         const canvas = document.createElement('canvas');
         canvas.width = Math.min(rawData.width, 300);
         canvas.height = Math.round((canvas.width / rawData.width) * rawData.height);
         const ctx = canvas.getContext('2d');
         if (ctx) {
           const imgData = ctx.createImageData(rawData.width, rawData.height);
-          imgData.data.set(rawData.previewData);
+          for (let i = 0; i < rawData.floatData.length; i++) {
+            imgData.data[i] = Math.round(rawData.floatData[i] * 255);
+          }
           const tempCanvas = document.createElement('canvas');
           tempCanvas.width = rawData.width;
           tempCanvas.height = rawData.height;

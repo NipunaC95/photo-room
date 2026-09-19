@@ -1,7 +1,7 @@
 // ============================================================
 // Layers System — Stacked Adjustment Layers math & data structures
 // ============================================================
-import type { Adjustments, HSLColor, ColorGradingWheel } from './processor';
+import type { Adjustments, ColorGradingWheel } from './processor';
 import { defaultAdjustments } from './processor';
 
 export interface Layer {
@@ -208,14 +208,14 @@ export function flattenAdjustments(layered: LayeredAdjustments): Adjustments {
   };
 
   // --- Crop & Transform ---
-  let angleShift = 0;
+  let rotationShift = 0;
   for (const layer of enabledLayers) {
     if (!layer.adjustments?.crop) continue;
-    angleShift += layer.adjustments.crop.angle * layer.opacity;
+    rotationShift += layer.adjustments.crop.rotation * layer.opacity;
   }
   result.crop = {
     ...base.crop,
-    angle: clamp(base.crop.angle + angleShift, -45, 45),
+    rotation: clamp(base.crop.rotation + rotationShift, -45, 45),
   };
 
   // --- Curves ---

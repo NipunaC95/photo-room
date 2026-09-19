@@ -36,20 +36,29 @@ export class LayersPanel {
     header.className = 'panel-header';
     header.innerHTML = `
       <h2>Layers</h2>
-      <div class="panel-header-actions">
-        <button class="panel-btn-primary" id="add-layer-btn">+ New Layer</button>
-      </div>
+      <button class="panel-add-layer-btn" id="add-layer-header-btn">+ Add Layer</button>
     `;
     this.container.appendChild(header);
 
-    header.querySelector('#add-layer-btn')?.addEventListener('click', () => {
-      const layerNum = (this.state.layers?.length || 0) + 1;
-      const newLayer = createDefaultLayer(`Layer ${layerNum}`);
-      this.state.layers.unshift(newLayer); // Add to top
-      this.state.activeLayerId = newLayer.id;
-      this.renderLayerList();
-      this.onActiveLayerChanged(newLayer.id);
-      this.onChange(this.state);
+    header.querySelector('#add-layer-header-btn')?.addEventListener('click', () => {
+      this.addNewLayer();
+    });
+
+    // Sub-actions bar
+    const subActions = document.createElement('div');
+    subActions.className = 'layers-action-bar';
+    subActions.innerHTML = `
+      <button class="layers-primary-add-btn" id="add-layer-main-btn">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+          <path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        New Adjustment Layer
+      </button>
+    `;
+    this.container.appendChild(subActions);
+
+    subActions.querySelector('#add-layer-main-btn')?.addEventListener('click', () => {
+      this.addNewLayer();
     });
 
     // Layer List container
@@ -61,16 +70,39 @@ export class LayersPanel {
     this.renderLayerList();
   }
 
+  private addNewLayer(): void {
+    const layerNum = (this.state.layers?.length || 0) + 1;
+    const newLayer = createDefaultLayer(`Layer ${layerNum}`);
+    if (!this.state.layers) this.state.layers = [];
+    this.state.layers.unshift(newLayer); // Add to top of stack
+    this.state.activeLayerId = newLayer.id;
+    this.renderLayerList();
+    this.onActiveLayerChanged(newLayer.id);
+    this.onChange(this.state);
+  }
+
   private renderLayerList(): void {
     const listWrap = this.container.querySelector('#layers-list');
     if (!listWrap) return;
     listWrap.innerHTML = '';
 
     // Custom Layers (Top to Bottom)
-    (this.state.layers || []).forEach((layer, idx) => {
-      const item = this.createLayerRow(layer, idx);
-      listWrap.appendChild(item);
-    });
+    const layers = this.state.layers || [];
+
+    if (layers.length === 0) {
+      const emptyState = document.createElement('div');
+      emptyState.className = 'layers-empty-state';
+      emptyState.innerHTML = `
+        <p class="empty-title">No Custom Layers</p>
+        <p class="empty-desc">Edits currently apply to Global Base. Add layers to stack non-destructive adjustments.</p>
+      `;
+      listWrap.appendChild(emptyState);
+    } else {
+      layers.forEach((layer, idx) => {
+        const item = this.createLayerRow(layer, idx);
+        listWrap.appendChild(item);
+      });
+    }
 
     // Base Layer Row (Always at bottom)
     const baseRow = document.createElement('div');
@@ -79,7 +111,10 @@ export class LayersPanel {
     baseRow.innerHTML = `
       <div class="layer-item-main">
         <span class="layer-icon">🌐</span>
-        <span class="layer-name">Global Base</span>
+        <div class="layer-info">
+          <span class="layer-name">Global Base</span>
+          <span class="layer-subtext">Overall photo foundation</span>
+        </div>
         <span class="layer-badge">Base</span>
       </div>
     `;
@@ -100,7 +135,7 @@ export class LayersPanel {
 
     row.innerHTML = `
       <div class="layer-item-header">
-        <button class="layer-toggle-btn" title="Toggle Visibility">
+        <button class="layer-toggle-btn" title="Toggle Layer Visibility">
           ${layer.enabled ? '👁️' : '🙈'}
         </button>
         <span class="layer-name" title="Click to select, double-click to rename">${this.escapeHtml(layer.name)}</span>
@@ -108,7 +143,7 @@ export class LayersPanel {
           <button class="layer-act-btn up-btn" title="Move Up" ${idx === 0 ? 'disabled' : ''}>▲</button>
           <button class="layer-act-btn down-btn" title="Move Down" ${idx === (this.state.layers.length - 1) ? 'disabled' : ''}>▼</button>
           <button class="layer-act-btn dup-btn" title="Duplicate Layer">📋</button>
-          <button class="layer-act-btn del-btn" title="Delete Layer">🗑️</button>
+          <button class="layer-act-btn del-btn danger" title="Delete Layer">🗑️</button>
         </div>
       </div>
       <div class="layer-item-opacity">
@@ -118,15 +153,18 @@ export class LayersPanel {
       </div>
     `;
 
-    // Row selection
-    row.querySelector('.layer-name')?.addEventListener('click', (e) => {
-      e.stopPropagation();
+    // Row selection on click
+    row.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      if (target.closest('.layer-actions') || target.closest('.layer-toggle-btn') || target.closest('.layer-opacity-slider')) {
+        return;
+      }
       this.state.activeLayerId = layer.id;
       this.renderLayerList();
       this.onActiveLayerChanged(layer.id);
     });
 
-    // Double-click to rename
+    // Double-click name to rename
     row.querySelector('.layer-name')?.addEventListener('dblclick', (e) => {
       e.stopPropagation();
       const nameEl = e.currentTarget as HTMLElement;
@@ -194,7 +232,7 @@ export class LayersPanel {
       }
     });
 
-    // Duplicate
+    // Duplicate Layer
     row.querySelector('.dup-btn')?.addEventListener('click', (e) => {
       e.stopPropagation();
       const dup: Layer = {
@@ -211,7 +249,7 @@ export class LayersPanel {
       this.onChange(this.state);
     });
 
-    // Delete
+    // Delete Layer
     row.querySelector('.del-btn')?.addEventListener('click', (e) => {
       e.stopPropagation();
       this.state.layers.splice(idx, 1);
