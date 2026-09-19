@@ -1,5 +1,5 @@
 // ============================================================
-// HSL / Color Panel — per-color hue/saturation/luminance
+// HSL / Color Panel — Single-panel layout with Hue, Saturation & Luminance sections
 // ============================================================
 import type { HSLColor } from '../modules/processor';
 
@@ -14,17 +14,18 @@ const COLOR_DEFS = [
   { name: 'Magenta', color: '#f72585' },
 ];
 
-const HSL_SLIDERS = [
-  { key: 'hue',        label: 'Hue',        min: -100, max: 100 },
-  { key: 'saturation', label: 'Saturation', min: -100, max: 100 },
-  { key: 'luminance',  label: 'Luminance',  min: -100, max: 100 },
+const SECTIONS = [
+  { key: 'hue',        title: 'Hue',        min: -100, max: 100 },
+  { key: 'saturation', title: 'Saturation', min: -100, max: 100 },
+  { key: 'luminance',  title: 'Luminance',  min: -100, max: 100 },
 ] as const;
+
+type ChannelKey = 'hue' | 'saturation' | 'luminance';
 
 export class HSLPanel {
   private container: HTMLElement;
   private values: HSLColor[];
   private onChange: (v: HSLColor[]) => void;
-  private activeColor = 0;
   private inputs: Map<string, HTMLInputElement> = new Map();
   private displays: Map<string, HTMLElement> = new Map();
 
@@ -42,93 +43,112 @@ export class HSLPanel {
   private build(): void {
     this.container.innerHTML = '';
 
+    // Header with Reset button
     const header = document.createElement('div');
     header.className = 'panel-header';
     header.innerHTML = `<h2>HSL / Color</h2><button class="panel-reset-btn" id="hsl-reset">↺ Reset</button>`;
     this.container.appendChild(header);
 
-    // Color tabs
-    const tabs = document.createElement('div');
-    tabs.className = 'panel-tabs';
-    COLOR_DEFS.forEach((def, i) => {
-      const btn = document.createElement('button');
-      btn.className = `panel-tab${i === this.activeColor ? ' active' : ''}`;
-      btn.dataset.idx = String(i);
-      btn.innerHTML = `<span class="color-dot" style="background:${def.color}"></span>${def.name}`;
-      btn.addEventListener('click', () => {
-        this.activeColor = i;
-        tabs.querySelectorAll('.panel-tab').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        this.renderSliders(sliderArea);
-      });
-      tabs.appendChild(btn);
-    });
-    this.container.appendChild(tabs);
-
-    const sliderArea = document.createElement('div');
-    sliderArea.className = 'panel-section';
-    this.container.appendChild(sliderArea);
-    this.renderSliders(sliderArea);
-
     header.querySelector('#hsl-reset')?.addEventListener('click', () => {
       this.values = Array.from({ length: 8 }, () => ({ hue: 0, saturation: 0, luminance: 0 }));
-      this.renderSliders(sliderArea);
+      this.refreshAllSliders();
       this.onChange(this.values.map(v => ({ ...v })));
     });
-  }
 
-  private renderSliders(area: HTMLElement): void {
-    area.innerHTML = '';
+    const content = document.createElement('div');
+    content.className = 'hsl-panel-content';
+
     this.inputs.clear();
     this.displays.clear();
 
-    HSL_SLIDERS.forEach(def => {
-      const row = document.createElement('div');
-      row.className = 'slider-row';
+    // Render HUE, SATURATION, LUMINANCE sections
+    SECTIONS.forEach(sec => {
+      const sectionEl = document.createElement('div');
+      sectionEl.className = 'panel-section';
 
-      const label = document.createElement('label');
-      label.className = 'slider-label';
-      label.textContent = def.label;
-      label.htmlFor = `hsl-${def.key}`;
+      const secTitle = document.createElement('div');
+      secTitle.className = 'panel-section-title';
+      secTitle.textContent = sec.title;
+      sectionEl.appendChild(secTitle);
 
-      const trackWrap = document.createElement('div');
-      trackWrap.className = 'slider-track-wrap';
+      COLOR_DEFS.forEach((colorDef, colorIdx) => {
+        const row = document.createElement('div');
+        row.className = 'slider-row';
 
-      const input = document.createElement('input');
-      input.type = 'range';
-      input.className = 'slider';
-      input.id = `hsl-${def.key}`;
-      input.min = String(def.min);
-      input.max = String(def.max);
-      input.step = '1';
-      input.value = String(this.values[this.activeColor][def.key]);
-      this.updateFill(input, def.min, def.max);
+        const label = document.createElement('label');
+        label.className = 'slider-label color-slider-label';
+        label.htmlFor = `hsl-${sec.key}-${colorIdx}`;
+        label.innerHTML = `<span class="color-dot-inline" style="background:${colorDef.color}"></span>${colorDef.name}`;
 
-      const display = document.createElement('span');
-      display.className = 'slider-value';
-      display.textContent = this.fmt(this.values[this.activeColor][def.key]);
+        const trackWrap = document.createElement('div');
+        trackWrap.className = 'slider-track-wrap';
 
-      input.addEventListener('input', () => {
-        const v = parseInt(input.value);
-        this.values[this.activeColor][def.key] = v;
-        display.textContent = this.fmt(v);
-        this.updateFill(input, def.min, def.max);
-        this.onChange(this.values.map(v => ({ ...v })));
+        const input = document.createElement('input');
+        input.type = 'range';
+        input.className = 'slider';
+        input.id = `hsl-${sec.key}-${colorIdx}`;
+        input.min = String(sec.min);
+        input.max = String(sec.max);
+        input.step = '1';
+
+        const val = this.values[colorIdx]?.[sec.key as ChannelKey] ?? 0;
+        input.value = String(val);
+        this.updateFill(input, sec.min, sec.max);
+
+        const display = document.createElement('span');
+        display.className = 'slider-value';
+        display.textContent = this.fmt(val);
+
+        const mapKey = `${sec.key}-${colorIdx}`;
+        this.inputs.set(mapKey, input);
+        this.displays.set(mapKey, display);
+
+        input.addEventListener('input', () => {
+          const v = parseInt(input.value, 10);
+          if (this.values[colorIdx]) {
+            this.values[colorIdx][sec.key as ChannelKey] = v;
+          }
+          display.textContent = this.fmt(v);
+          this.updateFill(input, sec.min, sec.max);
+          this.onChange(this.values.map(v => ({ ...v })));
+        });
+
+        input.addEventListener('dblclick', () => {
+          input.value = '0';
+          if (this.values[colorIdx]) {
+            this.values[colorIdx][sec.key as ChannelKey] = 0;
+          }
+          display.textContent = '0';
+          this.updateFill(input, sec.min, sec.max);
+          this.onChange(this.values.map(v => ({ ...v })));
+        });
+
+        trackWrap.appendChild(input);
+        row.append(label, trackWrap, display);
+        sectionEl.appendChild(row);
       });
 
-      input.addEventListener('dblclick', () => {
-        input.value = '0';
-        this.values[this.activeColor][def.key] = 0;
-        display.textContent = '0';
-        this.updateFill(input, def.min, def.max);
-        this.onChange(this.values.map(v => ({ ...v })));
-      });
+      content.appendChild(sectionEl);
+    });
 
-      this.inputs.set(def.key, input);
-      this.displays.set(def.key, display);
-      trackWrap.appendChild(input);
-      row.append(label, trackWrap, display);
-      area.appendChild(row);
+    this.container.appendChild(content);
+  }
+
+  private refreshAllSliders(): void {
+    SECTIONS.forEach(sec => {
+      COLOR_DEFS.forEach((_, colorIdx) => {
+        const mapKey = `${sec.key}-${colorIdx}`;
+        const input = this.inputs.get(mapKey);
+        const display = this.displays.get(mapKey);
+        const val = this.values[colorIdx]?.[sec.key as ChannelKey] ?? 0;
+        if (input) {
+          input.value = String(val);
+          this.updateFill(input, sec.min, sec.max);
+        }
+        if (display) {
+          display.textContent = this.fmt(val);
+        }
+      });
     });
   }
 
@@ -136,7 +156,6 @@ export class HSLPanel {
     const v = parseFloat(input.value);
     const pct = ((v - min) / (max - min)) * 100;
     input.style.background = `linear-gradient(90deg, #0a84ff ${pct}%, rgba(255,255,255,0.12) ${pct}%)`;
-
   }
 
   private fmt(v: number): string {
@@ -145,5 +164,6 @@ export class HSLPanel {
 
   update(values: HSLColor[]): void {
     this.values = values.map(v => ({ ...v }));
+    this.refreshAllSliders();
   }
 }

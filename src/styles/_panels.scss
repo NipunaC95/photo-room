@@ -439,3 +439,20 @@
   }
 }
 
+// ----- HSL Panel Inline Dot -----
+.color-slider-label {
+  display: inline-flex;
+  align-items: center;
+}
+
+.color-dot-inline {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin-right: 6px;
+  flex-shrink: 0;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+}
+
+
