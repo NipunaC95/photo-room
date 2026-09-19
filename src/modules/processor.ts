@@ -8,6 +8,8 @@ import { buildCurveLUTFloat } from './colormath';
 import type { CurvePoint } from './colormath';
 import type { CameraMetadata } from './raw';
 import { encode16BitTiff } from './raw';
+import type { LayeredAdjustments } from './layers';
+import { renderSubLayerMaskCanvas } from './layers';
 
 // ============================================================
 // Adjustment State Interfaces (unchanged — same public API)
@@ -670,9 +672,29 @@ export class ImageProcessor {
   private maskTexture: WebGLTexture | null = null;
   private useMask = 0;
   private maskOpacity = 1.0;
+  private uniforms: Map<string, WebGLUniformLocation> = new Map();
+  private bitDepth = 10;
+  private rawMetadata: CameraMetadata | null = null;
+  private grainSeed = 0;
+
+  private layeredAdjustments: LayeredAdjustments | null = null;
+  private activeMaskCanvas: HTMLCanvasElement | null = null;
+
+  private fboA: WebGLFramebuffer | null = null;
+  private fboTexA: WebGLTexture | null = null;
+  private fboB: WebGLFramebuffer | null = null;
+  private fboTexB: WebGLTexture | null = null;
+  private fboWidth = 0;
+  private fboHeight = 0;
 
   setAdjustments(adj: Adjustments): void {
     this.adjustments = adj;
+    this.scheduleRender();
+  }
+
+  setLayeredAdjustments(layered: LayeredAdjustments, activeMaskCanvas: HTMLCanvasElement | null = null): void {
+    this.layeredAdjustments = layered;
+    this.activeMaskCanvas = activeMaskCanvas;
     this.scheduleRender();
   }
 
@@ -697,6 +719,55 @@ export class ImageProcessor {
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, maskCanvas);
 
     this.scheduleRender();
+  }
+
+  private setMaskTextureInternal(maskCanvas: HTMLCanvasElement | null, opacity = 1.0): void {
+    const gl = this.gl;
+    this.maskOpacity = opacity;
+
+    if (!maskCanvas) {
+      this.useMask = 0;
+      return;
+    }
+
+    this.useMask = 1;
+    if (!this.maskTexture) {
+      this.maskTexture = createTexture(gl, gl.LINEAR);
+    }
+
+    gl.activeTexture(gl.TEXTURE2);
+    gl.bindTexture(gl.TEXTURE_2D, this.maskTexture);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, maskCanvas);
+  }
+
+  private ensureFbos(w: number, h: number): void {
+    const gl = this.gl;
+    if (this.fboA && this.fboWidth === w && this.fboHeight === h) return;
+
+    if (this.fboTexA) gl.deleteTexture(this.fboTexA);
+    if (this.fboA) gl.deleteFramebuffer(this.fboA);
+    if (this.fboTexB) gl.deleteTexture(this.fboTexB);
+    if (this.fboB) gl.deleteFramebuffer(this.fboB);
+
+    this.fboWidth = w;
+    this.fboHeight = h;
+
+    this.fboTexA = createTexture(gl, gl.LINEAR);
+    gl.bindTexture(gl.TEXTURE_2D, this.fboTexA);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, w, h, 0, gl.RGBA, gl.FLOAT, null);
+    this.fboA = gl.createFramebuffer()!;
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.fboA);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.fboTexA, 0);
+
+    this.fboTexB = createTexture(gl, gl.LINEAR);
+    gl.bindTexture(gl.TEXTURE_2D, this.fboTexB);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, w, h, 0, gl.RGBA, gl.FLOAT, null);
+    this.fboB = gl.createFramebuffer()!;
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.fboB);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.fboTexB, 0);
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   }
 
   constructor(canvas: HTMLCanvasElement) {
@@ -854,11 +925,6 @@ export class ImageProcessor {
     return this.rawMetadata;
   }
 
-  setAdjustments(adj: Adjustments): void {
-    this.adjustments = adj;
-    this.scheduleRender();
-  }
-
   getAdjustments(): Adjustments {
     return this.adjustments;
   }
@@ -940,18 +1006,73 @@ export class ImageProcessor {
 
   render(): void {
     if (!this.hasImage()) return;
+
+    if (!this.layeredAdjustments) {
+      this.renderPass(this.imageTexture!, null);
+      return;
+    }
+
+    const enabledLayers = (this.layeredAdjustments.layers || []).filter(l => l.enabled && l.opacity > 0);
+
+    if (enabledLayers.length === 0) {
+      this.adjustments = this.layeredAdjustments.base || defaultAdjustments();
+      this.useMask = 0;
+      this.renderPass(this.imageTexture!, null);
+      return;
+    }
+
+    // Pass 0: Base Adjustments -> fboA
+    this.ensureFbos(this.imageWidth, this.imageHeight);
+    this.adjustments = this.layeredAdjustments.base || defaultAdjustments();
+    this.useMask = 0;
+    this.renderPass(this.imageTexture!, this.fboA);
+
+    let currentInputTex = this.fboTexA!;
+    let currentFboTarget = this.fboB;
+    let currentOutTex = this.fboTexB!;
+
+    for (let i = 0; i < enabledLayers.length; i++) {
+      const layer = enabledLayers[i];
+      const isLast = (i === enabledLayers.length - 1);
+
+      let maskCanvas: HTMLCanvasElement | null = null;
+      const isCurrentActiveLayer = (layer.id === this.layeredAdjustments.activeLayerId);
+
+      if (isCurrentActiveLayer && this.activeMaskCanvas) {
+        maskCanvas = this.activeMaskCanvas;
+      } else if (layer.masks && layer.masks.length > 0) {
+        const activeMask = layer.masks.find(m => m.enabled);
+        if (activeMask) {
+          maskCanvas = renderSubLayerMaskCanvas(activeMask, this.imageWidth, this.imageHeight);
+        }
+      }
+
+      this.adjustments = layer.adjustments || defaultAdjustments();
+      this.setMaskTextureInternal(maskCanvas, layer.opacity);
+
+      const targetFbo = isLast ? null : currentFboTarget;
+      this.renderPass(currentInputTex, targetFbo);
+
+      if (!isLast) {
+        const tempTex = currentInputTex;
+        currentInputTex = currentOutTex;
+        currentOutTex = tempTex;
+        currentFboTarget = (currentFboTarget === this.fboB) ? this.fboA : this.fboB;
+      }
+    }
+  }
+
+  private renderPass(inputTex: WebGLTexture, targetFbo: WebGLFramebuffer | null): void {
     const gl = this.gl;
+    gl.bindFramebuffer(gl.FRAMEBUFFER, targetFbo);
+    gl.viewport(0, 0, this.imageWidth, this.imageHeight);
 
-    // Rebuild and re-upload the curve LUT whenever adjustments change
     this.updateCurveLUT();
-
-    // Upload all adjustment uniforms
     this.uploadUniforms();
 
-    // Draw full-screen quad — GPU processes every pixel in parallel
     gl.bindVertexArray(this.vao);
     gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, this.imageTexture);
+    gl.bindTexture(gl.TEXTURE_2D, inputTex);
     gl.activeTexture(gl.TEXTURE1);
     gl.bindTexture(gl.TEXTURE_2D, this.curveLUTTexture);
     if (this.maskTexture) {

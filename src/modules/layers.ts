@@ -137,6 +137,81 @@ export function getLayerWeight(layer: Layer): number {
 }
 
 /**
+ * Render pixel-accurate offscreen mask canvas for any sub-layer mask.
+ */
+export function renderSubLayerMaskCanvas(
+  mask: SubLayerMask,
+  width: number,
+  height: number
+): HTMLCanvasElement | null {
+  if (!mask || !mask.enabled) return null;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.max(10, Math.round(width));
+  canvas.height = Math.max(10, Math.round(height));
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return null;
+
+  const w = canvas.width;
+  const h = canvas.height;
+
+  if (mask.type === 'brush') {
+    if (mask.brushDataUrl) {
+      const img = new Image();
+      img.src = mask.brushDataUrl;
+      if (img.complete && img.naturalWidth > 0) {
+        ctx.drawImage(img, 0, 0, w, h);
+      } else {
+        ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+        ctx.fillRect(0, 0, w, h);
+      }
+    } else {
+      ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+      ctx.fillRect(0, 0, w, h);
+    }
+  } else if (mask.type === 'linear_gradient' && mask.linear) {
+    const l = mask.linear;
+    const grad = ctx.createLinearGradient(l.x1 * w, l.y1 * h, l.x2 * w, l.y2 * h);
+    grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+    grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, w, h);
+  } else if (mask.type === 'radial_gradient' && mask.radial) {
+    const r = mask.radial;
+    const cx = r.cx * w;
+    const cy = r.cy * h;
+    const rx = r.rx * w;
+    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, rx);
+    grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+    grad.addColorStop(Math.max(0, 1 - (r.feather || 0.5) * 0.8), 'rgba(255, 255, 255, 0.7)');
+    grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(cx, cy, rx, 0, Math.PI * 2);
+    ctx.fill();
+  } else {
+    ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+    ctx.fillRect(0, 0, w, h);
+  }
+
+  const imgData = ctx.getImageData(0, 0, w, h);
+  for (let i = 0; i < imgData.data.length; i += 4) {
+    const alpha = imgData.data[i + 3] || imgData.data[i];
+    imgData.data[i] = 255;
+    imgData.data[i + 1] = 255;
+    imgData.data[i + 2] = 255;
+    imgData.data[i + 3] = alpha;
+
+    if (mask.inverted) {
+      imgData.data[i + 3] = 255 - alpha;
+    }
+  }
+  ctx.putImageData(imgData, 0, 0);
+
+  return canvas;
+}
+
+/**
  * Computes the combined Adjustments by stacking all enabled layer adjustments
  * on top of the base adjustments, weighted by each layer's opacity and sub-layer masks.
  */

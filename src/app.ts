@@ -20,7 +20,7 @@ import { CropPanel, defaultCropAdjustments } from './panels/crop';
 import { LayersPanel } from './panels/layersPanel';
 import { FolderManager } from './modules/folderManager';
 import type { LayeredAdjustments, SubLayerMask } from './modules/layers';
-import { createDefaultLayeredAdjustments, flattenAdjustments } from './modules/layers';
+import { createDefaultLayeredAdjustments } from './modules/layers';
 import { MaskOverlay } from './modules/maskOverlay';
 
 import type { BatchItem } from './modules/folderManager';
@@ -36,7 +36,6 @@ export class App {
   private maskOverlay: MaskOverlay;
 
   private layeredAdjustments: LayeredAdjustments = createDefaultLayeredAdjustments();
-  private adjustments: Adjustments = defaultAdjustments();
 
   // Panels
   private basicPanel!: BasicPanel;
@@ -395,14 +394,12 @@ export class App {
   }
 
   private onAdjustmentsChanged(): void {
-    this.adjustments = flattenAdjustments(this.layeredAdjustments);
     this.process();
     this.folderManager.updateActiveLayeredAdjustments(this.layeredAdjustments);
     this.updateActiveLayerBar();
   }
 
   private onLayerStateChanged(): void {
-    this.adjustments = flattenAdjustments(this.layeredAdjustments);
     this.process();
     this.folderManager.updateActiveLayeredAdjustments(this.layeredAdjustments);
     this.updateActiveLayerBar();
@@ -412,7 +409,6 @@ export class App {
   private async loadBatchItem(item: BatchItem): Promise<void> {
     this.activeItem = item;
     this.layeredAdjustments = JSON.parse(JSON.stringify(item.layeredAdjustments));
-    this.adjustments = flattenAdjustments(this.layeredAdjustments);
     this.layersPanel.updateState(this.layeredAdjustments);
     this.syncPanelsToActiveLayer();
 
@@ -493,7 +489,6 @@ export class App {
     this.fileDims.textContent = `${sample.width} × ${sample.height}`;
     this.updateBadges(sample.bitDepth, sample.metadata);
     this.layeredAdjustments = createDefaultLayeredAdjustments();
-    this.adjustments = defaultAdjustments();
     this.layersPanel.updateState(this.layeredAdjustments);
     this.syncPanelsToActiveLayer();
     this.process();
@@ -607,7 +602,8 @@ export class App {
 
   private process(): void {
     if (!this.processor.hasImage()) return;
-    this.processor.setAdjustments(this.adjustments);
+    const maskCanvas = this.maskOverlay ? this.maskOverlay.getMaskCanvas() : null;
+    this.processor.setLayeredAdjustments(this.layeredAdjustments, maskCanvas);
     this.scheduleHistogramUpdate();
   }
 
@@ -668,13 +664,12 @@ export class App {
     if (this.showingBefore) {
       this.processor.setAdjustments(defaultAdjustments());
     } else {
-      this.processor.setAdjustments(this.adjustments);
+      this.process();
     }
   }
 
   private resetAll(): void {
     this.layeredAdjustments = createDefaultLayeredAdjustments();
-    this.adjustments = defaultAdjustments();
     this.layersPanel.updateState(this.layeredAdjustments);
     this.maskOverlay.setActiveMask(null);
     this.syncPanelsToActiveLayer();

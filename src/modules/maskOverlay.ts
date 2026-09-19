@@ -245,13 +245,19 @@ export class MaskOverlay {
       ctx.fillRect(0, 0, w, h);
     }
 
-    if (this.activeMask.inverted) {
-      const imgData = ctx.getImageData(0, 0, w, h);
-      for (let i = 0; i < imgData.data.length; i += 4) {
-        imgData.data[i + 3] = 255 - imgData.data[i + 3];
+    const imgData = ctx.getImageData(0, 0, w, h);
+    for (let i = 0; i < imgData.data.length; i += 4) {
+      const a = imgData.data[i + 3] || imgData.data[i];
+      imgData.data[i] = 255;
+      imgData.data[i + 1] = 255;
+      imgData.data[i + 2] = 255;
+      imgData.data[i + 3] = a;
+
+      if (this.activeMask.inverted) {
+        imgData.data[i + 3] = 255 - a;
       }
-      ctx.putImageData(imgData, 0, 0);
     }
+    ctx.putImageData(imgData, 0, 0);
 
     return canvas;
   }
