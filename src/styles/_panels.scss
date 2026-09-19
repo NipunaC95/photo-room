@@ -387,3 +387,55 @@
   background: $border-subtle;
   margin: $space-3 0;
 }
+
+// ----- Crop Panel Controls -----
+.crop-aspect-select {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid $border-subtle;
+  color: $text-primary;
+  border-radius: $radius-sm;
+  padding: 4px $space-2;
+  font-size: 11px;
+  outline: none;
+  cursor: pointer;
+
+  &:focus {
+    border-color: $apple-blue;
+  }
+}
+
+.crop-transform-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.crop-tool-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: $radius-sm;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid $border-subtle;
+  color: $text-secondary;
+  font-size: 10px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: $text-primary;
+    border-color: $border-default;
+  }
+
+  &.active {
+    background: rgba($apple-blue, 0.2);
+    border-color: $apple-blue;
+    color: $apple-blue;
+  }
+}
+

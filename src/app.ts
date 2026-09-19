@@ -15,7 +15,9 @@ import { ColorGradingPanel } from './panels/colorgrading';
 import { DetailPanel } from './panels/detail';
 import { EffectsPanel } from './panels/effects';
 import { CalibrationPanel } from './panels/calibration';
+import { CropPanel, defaultCropAdjustments } from './panels/crop';
 import { FolderManager } from './modules/folderManager';
+
 import type { BatchItem } from './modules/folderManager';
 import { Filmstrip } from './modules/filmstrip';
 import { BatchExport } from './modules/batchExport';
@@ -37,6 +39,8 @@ export class App {
   private detailPanel!: DetailPanel;
   private effectsPanel!: EffectsPanel;
   private calibrationPanel!: CalibrationPanel;
+  private cropPanel!: CropPanel;
+
 
   // UI refs
   private mainCanvas: HTMLCanvasElement;
@@ -170,7 +174,14 @@ export class App {
       this.adjustments.calibration,
       (v) => { this.adjustments.calibration = v; this.onAdjustmentsChanged(); }
     );
+
+    this.cropPanel = new CropPanel(
+      document.getElementById('panel-crop')!,
+      this.adjustments.crop || defaultCropAdjustments(),
+      (v) => { this.adjustments.crop = v; this.onAdjustmentsChanged(); }
+    );
   }
+
 
 
   private bindEvents(): void {
@@ -494,7 +505,9 @@ export class App {
     this.detailPanel.update(adj.detail);
     this.effectsPanel.update(adj.effects);
     this.calibrationPanel.update(adj.calibration);
+    if (adj.crop) this.cropPanel.update(adj.crop);
   }
+
 
   private process(): void {
     if (!this.processor.hasImage()) return;

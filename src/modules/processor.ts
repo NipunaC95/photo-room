@@ -81,6 +81,8 @@ export interface CalibrationAdjustments {
   blueSaturation: number;
 }
 
+import { type CropAdjustments, defaultCropAdjustments } from '../panels/crop';
+
 export interface Adjustments {
   basic: BasicAdjustments;
   curves: { rgb: CurvePoint[]; r: CurvePoint[]; g: CurvePoint[]; b: CurvePoint[] };
@@ -89,6 +91,7 @@ export interface Adjustments {
   detail: DetailAdjustments;
   effects: EffectsAdjustments;
   calibration: CalibrationAdjustments;
+  crop: CropAdjustments;
 }
 
 export function defaultAdjustments(): Adjustments {
@@ -122,8 +125,10 @@ export function defaultAdjustments(): Adjustments {
       shadowTint: 0, redHue: 0, redSaturation: 0,
       greenHue: 0, greenSaturation: 0, blueHue: 0, blueSaturation: 0,
     },
+    crop: defaultCropAdjustments(),
   };
 }
+
 
 // ============================================================
 // GLSL — Vertex Shader (trivial full-screen quad passthrough)
@@ -196,6 +201,13 @@ uniform float u_shadow_tint;
 uniform vec2  u_red_primary;    // .x=hue, .y=sat shift
 uniform vec2  u_green_primary;
 uniform vec2  u_blue_primary;
+
+// --- Crop, Rotation & Flip ---
+uniform vec4  u_crop;       // .x = xMin, .y = yMin, .z = width, .w = height
+uniform float u_rotation;   // angle in radians
+uniform float u_flip_h;     // 0.0 or 1.0
+uniform float u_flip_v;     // 0.0 or 1.0
+
 
 in vec2 v_uv;
 out vec4 fragColor;
@@ -490,7 +502,37 @@ vec3 applyGrain(vec3 col) {
 // Main — full pipeline in order
 // ============================================================
 void main() {
-  vec3 col = texture(u_image, v_uv).rgb;
+  vec2 uv = v_uv;
+
+  // Flip transformations
+  if (u_flip_h > 0.5) uv.x = 1.0 - uv.x;
+  if (u_flip_v > 0.5) uv.y = 1.0 - uv.y;
+
+  // Angle Rotation around center (0.5, 0.5)
+  if (abs(u_rotation) > 0.0001) {
+    vec2 center = vec2(0.5);
+    float cosA = cos(u_rotation);
+    float sinA = sin(u_rotation);
+    vec2 dir = uv - center;
+    uv = vec2(
+      dir.x * cosA - dir.y * sinA,
+      dir.x * sinA + dir.y * cosA
+    ) + center;
+  }
+
+  // Remap UV to crop bounds
+  uv = vec2(
+    u_crop.x + uv.x * u_crop.z,
+    u_crop.y + uv.y * u_crop.w
+  );
+
+  if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {
+    fragColor = vec4(0.0, 0.0, 0.0, 0.0);
+    return;
+  }
+
+  vec3 col = texture(u_image, uv).rgb;
+
 
   // 1. Calibration
   col = applyCalibration(col);
@@ -687,7 +729,9 @@ export class ImageProcessor {
       'u_vignette_amount', 'u_vignette_midpoint', 'u_vignette_feather',
       'u_grain_amount', 'u_grain_roughness', 'u_grain_seed',
       'u_shadow_tint', 'u_red_primary', 'u_green_primary', 'u_blue_primary',
+      'u_crop', 'u_rotation', 'u_flip_h', 'u_flip_v',
     ];
+
     for (const name of uniformNames) {
       const loc = gl.getUniformLocation(this.program, name);
       if (loc) this.uniforms.set(name, loc);
@@ -964,5 +1008,14 @@ export class ImageProcessor {
     set2fv('u_red_primary',   new Float32Array([c.redHue,   c.redSaturation]));
     set2fv('u_green_primary', new Float32Array([c.greenHue, c.greenSaturation]));
     set2fv('u_blue_primary',  new Float32Array([c.blueHue,  c.blueSaturation]));
+
+    // Crop, Rotation & Flip
+    const cr = adj.crop || { x: 0, y: 0, width: 1, height: 1, rotation: 0, flipH: false, flipV: false };
+    const set4fv = (n: string, v: Float32Array) => { const l = u.get(n); if (l) gl.uniform4fv(l, v); };
+    set4fv('u_crop', new Float32Array([cr.x, cr.y, cr.width, cr.height]));
+    set1f('u_rotation', (cr.rotation * Math.PI) / 180);
+    set1f('u_flip_h', cr.flipH ? 1.0 : 0.0);
+    set1f('u_flip_v', cr.flipV ? 1.0 : 0.0);
   }
 }
+
