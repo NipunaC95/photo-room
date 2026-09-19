@@ -1,11 +1,11 @@
 // ============================================================
-// Panel Controls — Sliders, Sections, Labels, Tabs
+// Panel Controls — macOS Apple HIG Sliders, Sections, Tabs
 // ============================================================
 @use 'variables' as *;
 
 // ----- Panel Section -----
 .panel-section {
-  margin-bottom: $space-5;
+  margin-bottom: $space-4;
 
   &:last-child {
     margin-bottom: 0;
@@ -13,13 +13,13 @@
 }
 
 .panel-section-title {
-  font-size: $text-xs;
+  font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   color: $text-muted;
-  margin-bottom: $space-3;
-  padding-bottom: $space-2;
+  margin-bottom: $space-2;
+  padding-bottom: 4px;
   border-bottom: 1px solid $border-subtle;
 }
 
@@ -27,8 +27,8 @@
 .slider-row {
   display: flex;
   align-items: center;
-  gap: $space-3;
-  margin-bottom: $space-3;
+  gap: $space-2;
+  margin-bottom: 10px;
 
   &:last-child {
     margin-bottom: 0;
@@ -36,9 +36,10 @@
 }
 
 .slider-label {
-  font-size: $text-sm;
+  font-size: 11px;
+  font-weight: 500;
   color: $text-secondary;
-  width: 80px;
+  width: 82px;
   flex-shrink: 0;
   white-space: nowrap;
 }
@@ -46,12 +47,12 @@
 .slider-track-wrap {
   flex: 1;
   position: relative;
-  height: 18px;
+  height: 16px;
   display: flex;
   align-items: center;
 }
 
-// Custom range input
+// macOS Native Range Input
 .slider {
   -webkit-appearance: none;
   appearance: none;
@@ -68,71 +69,78 @@
     cursor: not-allowed;
   }
 
-  // Webkit thumb
+  // Webkit thumb (macOS rounded pill style)
   &::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 13px;
-    height: 13px;
+    width: 12px;
+    height: 12px;
     border-radius: 50%;
-    background: $slider-thumb;
+    background: #ffffff;
     cursor: pointer;
-    border: 2px solid rgba(255,255,255,0.2);
-    box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+    border: 0.5px solid rgba(0, 0, 0, 0.3);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
     transition: transform $transition-fast, box-shadow $transition-fast;
 
     &:hover {
-      transform: scale(1.2);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.6), 0 0 0 3px rgba($accent-purple, 0.2);
+      transform: scale(1.15);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5), 0 0 0 3px rgba($apple-blue, 0.3);
     }
   }
 
   // Firefox thumb
   &::-moz-range-thumb {
-    width: 13px;
-    height: 13px;
+    width: 12px;
+    height: 12px;
     border-radius: 50%;
-    background: $slider-thumb;
+    background: #ffffff;
     cursor: pointer;
-    border: 2px solid rgba(255,255,255,0.2);
-    box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+    border: 0.5px solid rgba(0, 0, 0, 0.3);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
     transition: transform $transition-fast;
 
     &:hover {
-      transform: scale(1.2);
+      transform: scale(1.15);
     }
   }
 }
 
 .slider-value {
-  font-size: $text-sm;
+  font-size: 10px;
   font-family: $font-mono;
+  font-weight: 500;
   color: $text-primary;
-  width: 36px;
+  width: 38px;
   text-align: right;
   flex-shrink: 0;
 }
 
-// ----- Tabs (for HSL color tabs) -----
+// ----- Tabs (macOS Segmented Control Pills) -----
 .panel-tabs {
   display: flex;
   flex-wrap: wrap;
-  gap: $space-1;
-  margin-bottom: $space-4;
+  gap: 3px;
+  margin-bottom: $space-3;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 2px;
+  border-radius: $radius-md;
+  border: 1px solid $border-subtle;
 }
 
 .panel-tab {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  height: 24px;
-  padding: 0 $space-2;
-  border-radius: $radius-sm;
-  font-size: $text-xs;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 5px;
+  font-size: 10px;
   font-weight: 500;
-  color: $text-muted;
+  color: $text-secondary;
   transition: all $transition-fast;
-  background: $bg-surface;
+  background: transparent;
+  border: none;
+  cursor: pointer;
 
   .color-dot {
     width: 6px;
@@ -142,14 +150,14 @@
   }
 
   &:hover {
-    color: $text-secondary;
-    background: $bg-surface-2;
+    color: $text-primary;
+    background: rgba(255, 255, 255, 0.08);
   }
 
   &.active {
-    color: $text-primary;
-    background: $bg-surface-3;
-    outline: 1px solid $border-active;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.16);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   }
 }
 
@@ -157,21 +165,21 @@
 .color-wheel-group {
   display: flex;
   flex-direction: column;
-  gap: $space-4;
+  gap: $space-3;
 }
 
 .color-wheel-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: $space-3;
+  gap: $space-2;
 }
 
 .color-wheel-label {
-  font-size: $text-xs;
+  font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   color: $text-muted;
 }
 
@@ -179,11 +187,11 @@
   border-radius: 50%;
   cursor: crosshair;
   position: relative;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.5);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.5);
   transition: box-shadow $transition-base;
 
   &:hover {
-    box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.6);
   }
 }
 
@@ -198,10 +206,9 @@
   height: 10px;
   border-radius: 50%;
   border: 2px solid #fff;
-  box-shadow: 0 0 4px rgba(0,0,0,0.8);
+  box-shadow: 0 0 6px rgba(0,0,0,0.9);
   pointer-events: none;
   transform: translate(-50%, -50%);
-  transition: box-shadow $transition-fast;
 }
 
 .color-wheel-luminance {
@@ -220,37 +227,42 @@
 
 .curve-channel-tabs {
   display: flex;
-  gap: $space-1;
+  gap: 3px;
   margin-bottom: $space-3;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 2px;
+  border-radius: $radius-md;
+  border: 1px solid $border-subtle;
 }
 
 .curve-channel-tab {
-  height: 24px;
+  height: 22px;
   padding: 0 $space-3;
-  border-radius: $radius-sm;
-  font-size: $text-xs;
+  border-radius: 5px;
+  font-size: 10px;
   font-weight: 500;
   color: $text-muted;
   transition: all $transition-fast;
-  background: $bg-surface;
+  background: transparent;
+  border: none;
+  cursor: pointer;
 
-  &:hover { color: $text-secondary; background: $bg-surface-2; }
+  &:hover { color: $text-secondary; background: rgba(255, 255, 255, 0.08); }
 
   &.active {
     color: $text-primary;
-    background: $bg-surface-3;
-    outline: 1px solid $border-active;
+    background: rgba(255, 255, 255, 0.16);
   }
 
-  &[data-channel="rgb"] { &.active { color: $curve-rgb; } }
-  &[data-channel="r"]   { &.active { color: $curve-red; } }
-  &[data-channel="g"]   { &.active { color: $curve-green; } }
-  &[data-channel="b"]   { &.active { color: $curve-blue; } }
+  &[data-channel="rgb"] { &.active { color: #ffffff; } }
+  &[data-channel="r"]   { &.active { color: $color-red; } }
+  &[data-channel="g"]   { &.active { color: $color-green; } }
+  &[data-channel="b"]   { &.active { color: $color-blue; } }
 }
 
 .curve-hint {
-  font-size: $text-xs;
-  color: $text-disabled;
+  font-size: 10px;
+  color: $text-muted;
   text-align: center;
   margin-top: $space-2;
 }
@@ -259,21 +271,23 @@
 .panel-reset-btn {
   display: flex;
   align-items: center;
-  gap: $space-1;
-  height: 24px;
+  gap: 4px;
+  height: 22px;
   padding: 0 $space-2;
   border-radius: $radius-sm;
-  font-size: $text-xs;
-  color: $text-muted;
+  font-size: 10px;
+  font-weight: 500;
+  color: $text-secondary;
   border: 1px solid $border-subtle;
-  background: $bg-surface;
+  background: rgba(255, 255, 255, 0.05);
   margin-left: auto;
+  cursor: pointer;
   transition: all $transition-fast;
 
   &:hover {
-    color: $text-secondary;
+    color: $text-primary;
     border-color: $border-default;
-    background: $bg-surface-2;
+    background: rgba(255, 255, 255, 0.1);
   }
 }
 
@@ -281,10 +295,10 @@
 .panel-header {
   display: flex;
   align-items: center;
-  margin-bottom: $space-5;
+  margin-bottom: $space-4;
 
   h2 {
-    font-size: $text-md;
+    font-size: 13px;
     font-weight: 600;
     color: $text-primary;
     letter-spacing: -0.01em;
@@ -294,22 +308,24 @@
 // ----- Number input -----
 .num-input {
   width: 44px;
-  height: 22px;
-  background: $bg-surface;
+  height: 20px;
+  background: rgba(0, 0, 0, 0.3);
   border: 1px solid $border-subtle;
   border-radius: $radius-sm;
   color: $text-primary;
   font-family: $font-mono;
-  font-size: $text-xs;
+  font-size: 10px;
   text-align: center;
   transition: border-color $transition-fast;
+  outline: none;
 
   &:focus {
-    border-color: $accent-purple;
+    border-color: $apple-blue;
+    box-shadow: 0 0 0 2px rgba($apple-blue, 0.3);
   }
 }
 
-// ----- Toggle Switch -----
+// ----- Toggle Switch (macOS Switch Style) -----
 .toggle-row {
   display: flex;
   align-items: center;
@@ -318,14 +334,14 @@
 }
 
 .toggle-label {
-  font-size: $text-sm;
+  font-size: 11px;
   color: $text-secondary;
 }
 
 .toggle {
   position: relative;
-  width: 32px;
-  height: 18px;
+  width: 30px;
+  height: 16px;
 
   input {
     opacity: 0;
@@ -337,9 +353,8 @@
   .toggle-track {
     position: absolute;
     inset: 0;
-    background: $bg-surface-3;
+    background: rgba(255, 255, 255, 0.15);
     border-radius: $radius-full;
-    border: 1px solid $border-default;
     transition: all $transition-base;
     cursor: pointer;
 
@@ -349,20 +364,19 @@
       width: 12px;
       height: 12px;
       border-radius: 50%;
-      background: $text-muted;
+      background: #ffffff;
       top: 2px;
       left: 2px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
       transition: all $transition-base;
     }
   }
 
   input:checked + .toggle-track {
-    background: rgba($accent-purple, 0.3);
-    border-color: $accent-purple;
+    background: $apple-green;
 
     &::after {
       transform: translateX(14px);
-      background: $accent-purple;
     }
   }
 }
@@ -371,17 +385,5 @@
 .divider {
   height: 1px;
   background: $border-subtle;
-  margin: $space-4 0;
-}
-
-// ----- Badge -----
-.value-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 1px 6px;
-  border-radius: $radius-full;
-  font-size: $text-xs;
-  font-family: $font-mono;
-  background: $bg-surface-3;
-  color: $text-secondary;
+  margin: $space-3 0;
 }

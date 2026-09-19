@@ -1,15 +1,20 @@
 // ============================================================
-// Filmstrip & Batch Export Modal Styles
+// Filmstrip & Batch Export Modal — macOS Apple HIG Styling
 // ============================================================
+@use 'sass:color';
 @use 'variables' as *;
+
 
 .filmstrip-container {
   --filmstrip-height: 96px;
   display: flex;
   flex-direction: column;
-  background: $bg-elevated;
+  background: rgba(26, 26, 30, 0.92);
+  backdrop-filter: $glass-blur;
   border-top: 1px solid $border-subtle;
   height: var(--filmstrip-height, 96px);
+  min-height: 64px;
+  max-height: 280px;
   flex-shrink: 0;
   width: 100%;
   position: relative;
@@ -18,23 +23,24 @@
   &.resizing {
     user-select: none;
     .filmstrip-resize-handle {
-      background: rgba($accent-purple, 0.25);
+      background: rgba($apple-blue, 0.25);
 
       .resize-handle-bar {
-        background: $accent-purple;
+        background: $apple-blue;
         width: 48px;
       }
     }
   }
 }
 
+// macOS Handle Bar
 .filmstrip-resize-handle {
   position: absolute;
   top: -4px;
   left: 0;
   right: 0;
   height: 8px;
-  cursor: ns-resize;
+  cursor: row-resize;
   z-index: 30;
   display: flex;
   align-items: center;
@@ -50,10 +56,10 @@
   }
 
   &:hover {
-    background: rgba($accent-purple, 0.15);
+    background: rgba($apple-blue, 0.15);
 
     .resize-handle-bar {
-      background: $accent-purple;
+      background: $apple-blue;
       width: 48px;
     }
   }
@@ -64,7 +70,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 3px $space-3;
-  background: $bg-surface;
+  background: rgba(0, 0, 0, 0.2);
   border-bottom: 1px solid $border-subtle;
   font-size: 10px;
 }
@@ -78,13 +84,13 @@
 .filmstrip-folder-chip {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   color: $text-primary;
   font-weight: 600;
   font-size: 10px;
 
   svg {
-    color: $accent-purple;
+    color: $apple-purple;
   }
 }
 
@@ -92,51 +98,51 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 1px 6px;
+  padding: 1px 7px;
   border-radius: $radius-full;
   font-size: 9px;
   font-family: $font-mono;
-  background: rgba($accent-blue, 0.1);
-  border: 1px solid rgba($accent-blue, 0.2);
-  color: $accent-blue;
+  background: rgba($apple-blue, 0.12);
+  border: 1px solid rgba($apple-blue, 0.25);
+  color: $apple-blue;
 
   .sync-dot {
     width: 5px;
     height: 5px;
     border-radius: 50%;
-    background: $accent-blue;
-    box-shadow: 0 0 6px $accent-blue;
+    background: $apple-blue;
+    box-shadow: 0 0 6px $apple-blue;
   }
 
   &.synced {
-    background: rgba(#06d6a0, 0.12);
-    border-color: rgba(#06d6a0, 0.3);
-    color: #06d6a0;
+    background: rgba(#30d158, 0.12);
+    border-color: rgba(#30d158, 0.3);
+    color: #30d158;
 
     .sync-dot {
-      background: #06d6a0;
-      box-shadow: 0 0 6px #06d6a0;
+      background: #30d158;
+      box-shadow: 0 0 6px #30d158;
     }
   }
 
   &.saving {
-    background: rgba($accent-purple, 0.12);
-    border-color: rgba($accent-purple, 0.3);
-    color: $accent-purple;
+    background: rgba($apple-purple, 0.14);
+    border-color: rgba($apple-purple, 0.35);
+    color: $apple-purple;
 
     .sync-dot {
-      background: $accent-purple;
+      background: $apple-purple;
       animation: pulse 1s infinite alternate;
     }
   }
 
   &.local {
-    background: rgba(#ffd166, 0.12);
-    border-color: rgba(#ffd166, 0.3);
-    color: #ffd166;
+    background: rgba(#ff9f0a, 0.12);
+    border-color: rgba(#ff9f0a, 0.3);
+    color: #ff9f0a;
 
     .sync-dot {
-      background: #ffd166;
+      background: #ff9f0a;
     }
   }
 }
@@ -156,17 +162,17 @@
   width: 1px;
   height: 12px;
   background: $border-subtle;
-  margin: 0 1px;
+  margin: 0 2px;
 }
 
 .filmstrip-btn {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
   height: 20px;
-  padding: 0 6px;
+  padding: 0 7px;
   border-radius: $radius-sm;
-  background: $bg-surface-2;
+  background: rgba(255, 255, 255, 0.07);
   border: 1px solid $border-subtle;
   color: $text-secondary;
   font-size: 9px;
@@ -175,19 +181,19 @@
   transition: all $transition-fast;
 
   &:hover {
-    background: $bg-surface-3;
+    background: rgba(255, 255, 255, 0.12);
     color: $text-primary;
-    border-color: $border-active;
+    border-color: $border-default;
   }
 
   &.primary {
-    background: $accent-gradient;
+    background: $apple-blue;
     border: none;
     color: #fff;
     font-weight: 600;
 
     &:hover {
-      opacity: 0.92;
+      background: color.adjust($apple-blue, $lightness: 5%);
       box-shadow: $glow-accent;
     }
   }
@@ -197,6 +203,7 @@
   display: flex;
   align-items: center;
   flex: 1;
+  min-height: 0;
   position: relative;
   overflow: hidden;
   padding: 2px 0;
@@ -206,9 +213,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
+  width: 20px;
   height: 100%;
-  background: rgba($bg-elevated, 0.85);
+  background: rgba(26, 26, 30, 0.8);
   backdrop-filter: blur(4px);
   border: none;
   color: $text-secondary;
@@ -217,7 +224,7 @@
   transition: all $transition-fast;
 
   &:hover {
-    background: $bg-surface-2;
+    background: rgba(255, 255, 255, 0.1);
     color: $text-primary;
   }
 
@@ -261,7 +268,7 @@
   }
 }
 
-// Lightroom-style compact item card
+// macOS Photos Style Thumbnail Card
 .filmstrip-item {
   display: flex;
   flex-direction: column;
@@ -270,16 +277,16 @@
   min-width: 56px;
   max-width: 260px;
   flex-shrink: 0;
-  background: $bg-surface;
+  background: rgba(255, 255, 255, 0.04);
   border: 1px solid $border-subtle;
-  border-radius: $radius-sm;
+  border-radius: 6px;
   padding: 3px;
   cursor: pointer;
   transition: border-color $transition-fast, box-shadow $transition-fast;
   position: relative;
 
   &:hover {
-    border-color: $border-active;
+    border-color: $border-default;
 
     .item-overlay {
       opacity: 1;
@@ -287,9 +294,9 @@
   }
 
   &.active {
-    border: 1.5px solid $accent-purple;
-    box-shadow: 0 0 10px rgba($accent-purple, 0.35);
-    background: $bg-surface-2;
+    border: 1.5px solid $apple-blue;
+    box-shadow: 0 0 12px rgba($apple-blue, 0.4);
+    background: rgba($apple-blue, 0.08);
 
     .thumb-name {
       color: $text-primary;
@@ -302,11 +309,9 @@
     width: 100%;
     flex: 1;
     min-height: 28px;
-    border-radius: 2px;
+    border-radius: 4px;
     overflow: hidden;
     background: #000;
-
-
 
     img {
       width: 100%;
@@ -323,8 +328,8 @@
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: $accent-purple;
-    box-shadow: 0 0 6px $accent-purple;
+    background: $apple-purple;
+    box-shadow: 0 0 6px $apple-purple;
   }
 
   .raw-badge {
@@ -336,18 +341,17 @@
     font-weight: 700;
     padding: 0 3px;
     border-radius: 2px;
-    background: rgba(#000, 0.75);
-    color: $accent-purple;
-    border: 1px solid rgba($accent-purple, 0.4);
+    background: rgba(0, 0, 0, 0.8);
+    color: $apple-purple;
+    border: 1px solid rgba($apple-purple, 0.4);
   }
 
   .item-overlay {
     position: absolute;
     inset: 0;
-    background: rgba(#000, 0.6);
+    background: rgba(0, 0, 0, 0.55);
     display: flex;
     align-items: center;
-
     justify-content: center;
     gap: 6px;
     opacity: 0;
@@ -368,7 +372,7 @@
     cursor: pointer;
 
     &:hover {
-      background: $accent-purple;
+      background: $apple-purple;
       transform: scale(1.1);
     }
   }
@@ -397,13 +401,12 @@
   }
 }
 
-
-// ----- Batch Export Modal -----
+// ----- macOS Native Sheet / Modal Popup -----
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(20px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -420,9 +423,10 @@
 
 .modal-box {
   width: 440px;
-  background: $bg-elevated;
-  border: 1px solid $border-default;
-  border-radius: $radius-xl;
+  background: rgba(32, 32, 36, 0.95);
+  backdrop-filter: blur(30px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 14px;
   box-shadow: $shadow-lg;
   overflow: hidden;
   display: flex;
@@ -433,12 +437,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: $space-4 $space-5;
-  background: $bg-surface;
+  padding: $space-3 $space-4;
+  background: rgba(255, 255, 255, 0.04);
   border-bottom: 1px solid $border-subtle;
 
   h3 {
-    font-size: $text-lg;
+    font-size: 13px;
     font-weight: 600;
     color: $text-primary;
     margin: 0;
@@ -458,16 +462,16 @@
 }
 
 .modal-body {
-  padding: $space-5;
+  padding: $space-4;
   display: flex;
   flex-direction: column;
-  gap: $space-4;
+  gap: $space-3;
 }
 
 .modal-row {
   display: flex;
   flex-direction: column;
-  gap: $space-1;
+  gap: 4px;
 
   label {
     font-size: 11px;
@@ -476,16 +480,16 @@
   }
 
   select, input[type="range"] {
-    background: $bg-surface;
+    background: rgba(0, 0, 0, 0.3);
     border: 1px solid $border-subtle;
     color: $text-primary;
-    border-radius: $radius-md;
-    padding: 8px $space-3;
-    font-size: 12px;
+    border-radius: 6px;
+    padding: 6px $space-3;
+    font-size: 11px;
     outline: none;
 
     &:focus {
-      border-color: $accent-purple;
+      border-color: $apple-blue;
     }
   }
 }
@@ -493,17 +497,17 @@
 .batch-progress-container {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  background: $bg-surface;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.25);
   padding: $space-3;
-  border-radius: $radius-md;
+  border-radius: 8px;
   border: 1px solid $border-subtle;
 }
 
 .batch-progress-bar {
   width: 100%;
-  height: 6px;
-  background: $bg-surface-3;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.1);
   border-radius: $radius-full;
   overflow: hidden;
 }
@@ -511,19 +515,19 @@
 .batch-progress-bar-fill {
   height: 100%;
   width: 0%;
-  background: $accent-gradient;
+  background: $apple-blue;
   transition: width 0.15s ease;
 }
 
 .batch-progress-status {
   display: flex;
   justify-content: space-between;
-  font-size: 11px;
+  font-size: 10px;
   color: $text-secondary;
 
   #batch-progress-filename {
     font-family: $font-mono;
-    color: $accent-purple;
+    color: $apple-purple;
   }
 }
 
@@ -532,7 +536,7 @@
   align-items: center;
   justify-content: flex-end;
   gap: $space-2;
-  padding: $space-4 $space-5;
-  background: $bg-surface;
+  padding: $space-3 $space-4;
+  background: rgba(255, 255, 255, 0.04);
   border-top: 1px solid $border-subtle;
 }

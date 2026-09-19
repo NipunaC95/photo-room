@@ -1,5 +1,5 @@
 // ============================================================
-// Layout
+// Layout — Native macOS Apple Human Interface Guidelines Style
 // ============================================================
 @use 'sass:color';
 @use 'variables' as *;
@@ -9,27 +9,50 @@
   flex-direction: column;
   height: 100vh;
   overflow: hidden;
+  font-family: $font-ui;
+  background: $bg-base;
+  color: $text-primary;
+  -webkit-font-smoothing: antialiased;
 }
 
-// ----- Header -----
+// ----- Header (macOS Titlebar) -----
 .app-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   height: $header-height;
   padding: 0 $space-4;
-  background: $bg-elevated;
+  background: rgba(30, 30, 34, 0.88);
+  backdrop-filter: $glass-blur;
   border-bottom: 1px solid $border-subtle;
   flex-shrink: 0;
   z-index: 100;
-  gap: $space-4;
+  gap: $space-3;
 }
 
 .header-left {
   display: flex;
   align-items: center;
-  gap: $space-5;
-  min-width: 200px;
+  gap: $space-4;
+  min-width: 220px;
+}
+
+// macOS Traffic Lights
+.mac-window-controls {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+
+  .mac-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+
+    &.close { background: #ff5f56; border: 0.5px solid rgba(0,0,0,0.25); }
+    &.minimize { background: #ffbd2e; border: 0.5px solid rgba(0,0,0,0.25); }
+    &.zoom { background: #27c93f; border: 0.5px solid rgba(0,0,0,0.25); }
+  }
 }
 
 .header-center {
@@ -42,7 +65,7 @@
   display: flex;
   align-items: center;
   gap: $space-2;
-  min-width: 200px;
+  min-width: 220px;
   justify-content: flex-end;
 }
 
@@ -58,7 +81,7 @@
 }
 
 .logo-text {
-  font-size: $text-xl;
+  font-size: 15px;
   font-weight: 700;
   letter-spacing: -0.02em;
   background: $accent-gradient;
@@ -75,9 +98,9 @@
 }
 
 .file-name {
-  font-size: $text-sm;
-  font-weight: 500;
-  color: $text-secondary;
+  font-size: 11px;
+  font-weight: 600;
+  color: $text-primary;
   max-width: 160px;
   white-space: nowrap;
   overflow: hidden;
@@ -85,7 +108,7 @@
 }
 
 .file-dims {
-  font-size: $text-xs;
+  font-size: 10px;
   color: $text-muted;
   font-family: $font-mono;
 }
@@ -95,24 +118,22 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 2px 8px;
+  padding: 2px 7px;
   border-radius: $radius-full;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 600;
   font-family: $font-mono;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  background: rgba($accent-blue, 0.12);
-  color: $accent-blue;
-  border: 1px solid rgba($accent-blue, 0.28);
-  box-shadow: 0 0 10px rgba($accent-blue, 0.12);
+  letter-spacing: 0.04em;
+  background: rgba($apple-blue, 0.12);
+  color: $apple-blue;
+  border: 1px solid rgba($apple-blue, 0.28);
   white-space: nowrap;
 
   &.raw-mode {
-    background: rgba($accent-purple, 0.14);
-    color: $accent-purple;
-    border-color: rgba($accent-purple, 0.35);
-    box-shadow: 0 0 12px rgba($accent-purple, 0.16);
+    background: rgba($apple-purple, 0.14);
+    color: $apple-purple;
+    border-color: rgba($apple-purple, 0.35);
   }
 }
 
@@ -120,36 +141,36 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 3px 8px;
+  padding: 2px 8px;
   border-radius: $radius-sm;
-  font-size: 11px;
+  font-size: 10px;
   font-family: $font-mono;
   color: $text-secondary;
-  background: $bg-surface;
+  background: rgba(255, 255, 255, 0.05);
   border: 1px solid $border-subtle;
   white-space: nowrap;
-  max-width: 420px;
+  max-width: 380px;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-// View controls
+// macOS View Controls (Segmented Control style)
 .view-controls {
   display: flex;
   align-items: center;
-  gap: $space-1;
-  background: $bg-surface;
+  gap: 2px;
+  background: rgba(0, 0, 0, 0.35);
   border: 1px solid $border-subtle;
   border-radius: $radius-md;
-  padding: $space-1;
+  padding: 2px;
 }
 
 .zoom-display {
-  font-size: $text-sm;
+  font-size: 11px;
   font-family: $font-mono;
   color: $text-secondary;
-  padding: 0 $space-3;
-  min-width: 48px;
+  padding: 0 $space-2;
+  min-width: 44px;
   text-align: center;
 }
 
@@ -158,70 +179,81 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 24px;
   border-radius: $radius-sm;
   color: $text-secondary;
-  transition: background $transition-fast, color $transition-fast;
+  transition: all $transition-fast;
+  background: transparent;
+  border: none;
 
   &:hover {
-    background: $bg-surface-3;
+    background: rgba(255, 255, 255, 0.1);
     color: $text-primary;
   }
 
   &.active {
-    background: rgba($accent-purple, 0.15);
-    color: $accent-purple;
+    background: rgba($apple-purple, 0.2);
+    color: $apple-purple;
   }
 }
 
 .btn-secondary {
-  height: 30px;
+  height: 26px;
   padding: 0 $space-3;
   border-radius: $radius-sm;
   border: 1px solid $border-default;
-  background: $bg-surface;
-  color: $text-secondary;
-  font-size: $text-sm;
+  background: rgba(255, 255, 255, 0.06);
+  color: $text-primary;
+  font-size: 11px;
   font-weight: 500;
   transition: all $transition-fast;
+  cursor: pointer;
 
   &:hover {
-    border-color: $border-active;
-    color: $text-primary;
-    background: $bg-surface-2;
+    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  &:active {
+    background: rgba(255, 255, 255, 0.04);
   }
 }
 
 .btn-primary {
   display: inline-flex;
   align-items: center;
-  gap: $space-1;
-  height: 30px;
+  gap: 4px;
+  height: 26px;
   padding: 0 $space-3;
   border-radius: $radius-sm;
-  background: $accent-gradient;
+  background: $apple-blue;
   color: #fff;
-  font-size: $text-sm;
+  font-size: 11px;
   font-weight: 600;
-  transition: opacity $transition-fast, box-shadow $transition-fast;
+  border: none;
+  cursor: pointer;
+  transition: all $transition-fast;
   letter-spacing: 0.01em;
 
   &:hover {
-    opacity: 0.9;
-    box-shadow: $glow-accent;
+    background: color.adjust($apple-blue, $lightness: 5%);
+    box-shadow: 0 0 12px rgba($apple-blue, 0.4);
+  }
+
+  &:active {
+    transform: scale(0.98);
   }
 
   &.btn-export {
-    background: $bg-surface-2;
+    background: rgba(255, 255, 255, 0.08);
     border: 1px solid $border-default;
-    color: $text-secondary;
+    color: $text-primary;
 
     &:hover {
-      border-color: $accent-purple;
-      color: $accent-purple;
-      background: rgba($accent-purple, 0.08);
-      box-shadow: none;
+      border-color: $apple-blue;
+      color: $apple-blue;
+      background: rgba($apple-blue, 0.1);
     }
   }
 }
@@ -229,26 +261,22 @@
 .export-dropdown-wrapper {
   display: flex;
   align-items: center;
-  background: $bg-surface-2;
+  background: rgba(255, 255, 255, 0.06);
   border: 1px solid $border-default;
   border-radius: $radius-md;
   overflow: hidden;
   transition: border-color $transition-base;
 
   &:hover {
-    border-color: $accent-purple;
+    border-color: $apple-blue;
   }
 
   .btn-export {
     border: none !important;
     border-radius: 0 !important;
     padding: 0 $space-3 !important;
-    height: 32px !important;
+    height: 26px !important;
     background: transparent !important;
-
-    &:hover {
-      background: rgba($accent-purple, 0.08) !important;
-    }
   }
 }
 
@@ -257,10 +285,10 @@
   color: $text-secondary;
   border: none;
   border-left: 1px solid $border-subtle;
-  font-size: 11px;
+  font-size: 10px;
   font-family: $font-mono;
   padding: 0 $space-2;
-  height: 32px;
+  height: 26px;
   cursor: pointer;
   outline: none;
 
@@ -281,15 +309,15 @@
   overflow: hidden;
 }
 
-// ----- Panel Nav (left sidebar) -----
+// ----- Panel Nav (macOS Left Sidebar) -----
 .panel-nav {
   width: $nav-width;
   background: $bg-elevated;
   border-right: 1px solid $border-subtle;
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: $space-2;
+  gap: 4px;
+  padding: $space-2 4px;
   flex-shrink: 0;
   overflow-y: auto;
 }
@@ -299,13 +327,16 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 3px;
   width: 100%;
-  padding: $space-2 0;
+  padding: 7px 0;
   border-radius: $radius-md;
   color: $text-muted;
   transition: all $transition-base;
   position: relative;
+  background: transparent;
+  border: none;
+  cursor: pointer;
 
   svg {
     transition: color $transition-base;
@@ -313,19 +344,19 @@
 
   span {
     font-size: 9px;
-    font-weight: 500;
+    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.04em;
   }
 
   &:hover {
-    background: $bg-surface;
+    background: rgba(255, 255, 255, 0.06);
     color: $text-secondary;
   }
 
   &.active {
-    background: $bg-surface-2;
-    color: $accent-purple;
+    background: rgba($apple-purple, 0.15);
+    color: $apple-purple;
 
     &::before {
       content: '';
@@ -333,9 +364,9 @@
       left: 0;
       top: 20%;
       bottom: 20%;
-      width: 2px;
-      background: $accent-gradient;
-      border-radius: 0 $radius-full $radius-full 0;
+      width: 2.5px;
+      background: $apple-purple;
+      border-radius: 0 4px 4px 0;
     }
   }
 }
@@ -351,8 +382,8 @@
   position: relative;
   overflow: hidden;
   background-image:
-    radial-gradient(circle at 20% 30%, rgba($accent-purple, 0.03) 0%, transparent 50%),
-    radial-gradient(circle at 80% 70%, rgba($accent-blue, 0.03) 0%, transparent 50%);
+    radial-gradient(circle at 20% 30%, rgba($apple-purple, 0.02) 0%, transparent 60%),
+    radial-gradient(circle at 80% 70%, rgba($apple-blue, 0.02) 0%, transparent 60%);
 }
 
 .canvas-wrapper {
@@ -365,22 +396,23 @@
   justify-content: center;
 }
 
-
-// Drop zone
+// Drop zone (macOS styled glass panel)
 .drop-zone {
   position: absolute;
-  inset: $space-8;
+  inset: $space-6;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px dashed $border-default;
+  border: 1.5px dashed rgba(255, 255, 255, 0.12);
   border-radius: $radius-xl;
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(10px);
   transition: all $transition-base;
 
   &.drag-over {
-    border-color: $accent-purple;
-    background: rgba($accent-purple, 0.05);
-    box-shadow: inset 0 0 40px rgba($accent-purple, 0.05);
+    border-color: $apple-blue;
+    background: rgba($apple-blue, 0.06);
+    box-shadow: inset 0 0 40px rgba($apple-blue, 0.08);
   }
 }
 
@@ -393,59 +425,61 @@
 }
 
 .drop-title {
-  font-size: $text-xl;
+  font-size: 18px;
   font-weight: 600;
-  color: $text-secondary;
+  color: $text-primary;
+  letter-spacing: -0.01em;
 }
 
 .drop-sub {
-  font-size: $text-md;
-  color: $text-muted;
+  font-size: 12px;
+  color: $text-secondary;
 }
 
 .drop-link {
-  color: $accent-purple;
-  text-decoration: underline;
-  text-underline-offset: 2px;
+  color: $apple-blue;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
 
   &:hover {
-    color: color.adjust($accent-purple, $lightness: 10%);
+    text-decoration: underline;
   }
 }
 
 .drop-formats {
-  font-size: $text-xs;
-  color: $text-disabled;
+  font-size: 10px;
+  color: $text-muted;
   font-family: $font-mono;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.04em;
 }
 
 .drop-actions {
   display: flex;
   align-items: center;
-  gap: $space-3;
+  gap: $space-2;
   margin-top: $space-2;
 }
 
 .btn-sample-raw {
   display: inline-flex;
   align-items: center;
-  gap: $space-2;
-  padding: 8px 18px;
+  gap: 6px;
+  padding: 6px 14px;
   border-radius: $radius-full;
-  font-size: $text-sm;
-  font-weight: 500;
-  color: $accent-purple;
-  background: rgba($accent-purple, 0.08);
-  border: 1px solid rgba($accent-purple, 0.28);
+  font-size: 11px;
+  font-weight: 600;
+  color: $apple-purple;
+  background: rgba($apple-purple, 0.1);
+  border: 1px solid rgba($apple-purple, 0.25);
   cursor: pointer;
   transition: all $transition-base;
 
   &:hover {
-    background: rgba($accent-purple, 0.16);
-    border-color: $accent-purple;
+    background: rgba($apple-purple, 0.2);
+    border-color: $apple-purple;
     transform: translateY(-1px);
-    box-shadow: 0 4px 16px rgba($accent-purple, 0.2);
+    box-shadow: 0 4px 16px rgba($apple-purple, 0.25);
   }
 
   svg {
@@ -454,7 +488,7 @@
   }
 }
 
-// Main canvas
+// Main canvas (macOS Shadow Frame)
 #main-canvas {
   max-width: 100%;
   max-height: 100%;
@@ -462,6 +496,7 @@
   cursor: grab;
   border-radius: $radius-md;
   box-shadow: $shadow-lg;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   transition: box-shadow $transition-base;
 
   &:active {
@@ -483,7 +518,7 @@
 .panels-container {
   flex: 1;
   overflow-y: auto;
-  padding: $space-4;
+  padding: $space-3;
 
   .panel {
     display: none;

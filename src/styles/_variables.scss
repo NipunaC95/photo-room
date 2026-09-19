@@ -1,48 +1,63 @@
 // ============================================================
-// Design Tokens & Variables
+// macOS Apple Human Interface Guidelines Design System Tokens
 // ============================================================
 
-// -- Color Palette --
-$bg-base:         #0e0e10;
-$bg-elevated:     #161618;
-$bg-surface:      #1e1e21;
-$bg-surface-2:    #242428;
-$bg-surface-3:    #2a2a2f;
-$border-subtle:   rgba(255, 255, 255, 0.06);
-$border-default:  rgba(255, 255, 255, 0.10);
-$border-active:   rgba(255, 255, 255, 0.20);
+// -- macOS Pro Dark Palette --
+$bg-base:         #141416; // Deep canvas background
+$bg-elevated:     #1e1e22; // Window sidebar & toolbar background
+$bg-surface:      #26262b; // Control group / Card surface
+$bg-surface-2:    #303036; // Hover / Elevated card
+$bg-surface-3:    #3a3a42; // Active state fill
 
-// -- Accent Gradient --
-$accent-purple:   #e96fff;
-$accent-blue:     #4fc3ff;
-$accent-gradient: linear-gradient(135deg, $accent-purple, $accent-blue);
+// -- macOS Translucent Glass --
+$glass-bg:        rgba(30, 30, 34, 0.75);
+$glass-blur:      blur(25px) saturate(190%);
+$glass-border:    rgba(255, 255, 255, 0.12);
 
-// -- Text --
-$text-primary:    #f0f0f3;
-$text-secondary:  #9898a8;
-$text-muted:      #5c5c6e;
-$text-disabled:   #3a3a48;
+// -- Apple System Accent Colors (macOS Dark Mode Tint) --
+$apple-blue:      #0a84ff; // macOS System Blue
+$apple-purple:    #bf5af2; // macOS System Purple
+$apple-indigo:    #5e5ce6; // macOS System Indigo
+$apple-orange:    #ff9f0a; // macOS System Orange
+$apple-green:     #30d158; // macOS System Green
+$apple-red:       #ff453a; // macOS System Red
 
-// -- Slider Colors --
-$slider-track:    #2e2e35;
-$slider-fill:     linear-gradient(90deg, $accent-purple, $accent-blue);
-$slider-thumb:    #fff;
+$accent-purple:   #bf5af2;
+$accent-blue:     #0a84ff;
+$accent-gradient: linear-gradient(135deg, #0a84ff 0%, #bf5af2 100%);
+
+// -- macOS Border & Separation Lines --
+$border-subtle:   rgba(255, 255, 255, 0.07);
+$border-default:  rgba(255, 255, 255, 0.12);
+$border-active:   rgba(10, 132, 255, 0.6);
+
+// -- Text Tokens --
+$text-primary:    #f5f5f7;
+$text-secondary:  #a1a1a6;
+$text-muted:      #6e6e73;
+$text-disabled:   #424245;
+
+// -- macOS Native Slider Styling --
+$slider-track:    rgba(255, 255, 255, 0.12);
+$slider-fill:     linear-gradient(90deg, #0a84ff, #bf5af2);
+$slider-thumb:    #ffffff;
+
+// -- HSL & Color Wheels --
+$color-red:       #ff453a;
+$color-orange:    #ff9f0a;
+$color-yellow:    #ffd60a;
+$color-green:     #30d158;
+$color-aqua:      #64d2ff;
+$color-blue:      #0a84ff;
+$color-purple:    #bf5af2;
+$color-magenta:   #ff375f;
 
 // -- Curve Colors --
-$curve-rgb:       #d0d0d8;
-$curve-red:       #ff6b6b;
-$curve-green:     #6bff9e;
-$curve-blue:      #6baaff;
+$curve-rgb:       #f5f5f7;
+$curve-red:       #ff453a;
+$curve-green:     #30d158;
+$curve-blue:      #0a84ff;
 
-// -- HSL Color Labels --
-$color-red:       #ff4d4d;
-$color-orange:    #ff8c42;
-$color-yellow:    #ffd166;
-$color-green:     #06d6a0;
-$color-aqua:      #00b4d8;
-$color-blue:      #4361ee;
-$color-purple:    #b5179e;
-$color-magenta:   #f72585;
 
 // -- Spacing --
 $space-1:  4px;
@@ -53,16 +68,16 @@ $space-5:  20px;
 $space-6:  24px;
 $space-8:  32px;
 
-// -- Border Radius --
-$radius-sm:  4px;
+// -- Border Radius (macOS HIG Standards) --
+$radius-sm:  5px;
 $radius-md:  8px;
 $radius-lg:  12px;
 $radius-xl:  16px;
 $radius-full: 9999px;
 
-// -- Typography --
-$font-ui:    'Inter', system-ui, sans-serif;
-$font-mono:  'JetBrains Mono', monospace;
+// -- Typography (Apple System SF Fonts) --
+$font-ui:    -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
+$font-mono:  "SF Mono", "JetBrains Mono", Menlo, Monaco, monospace;
 
 // -- Font Sizes --
 $text-xs:   10px;
@@ -73,17 +88,17 @@ $text-lg:   14px;
 $text-xl:   16px;
 
 // -- Transitions --
-$transition-fast:   0.1s ease;
-$transition-base:   0.2s ease;
-$transition-slow:   0.35s cubic-bezier(0.4, 0, 0.2, 1);
+$transition-fast:   0.12s cubic-bezier(0.2, 0, 0, 1);
+$transition-base:   0.22s cubic-bezier(0.2, 0, 0, 1);
+$transition-slow:   0.35s cubic-bezier(0.16, 1, 0.3, 1);
 
 // -- Layout --
-$header-height:     52px;
-$nav-width:         64px;
-$sidebar-width:     290px;
+$header-height:     48px;
+$nav-width:         60px;
+$sidebar-width:     300px;
 
 // -- Shadows --
-$shadow-sm:   0 1px 3px rgba(0,0,0,0.4);
-$shadow-md:   0 4px 12px rgba(0,0,0,0.5);
-$shadow-lg:   0 8px 32px rgba(0,0,0,0.6);
-$glow-accent: 0 0 20px rgba(233, 111, 255, 0.15);
+$shadow-sm:   0 2px 8px rgba(0, 0, 0, 0.25);
+$shadow-md:   0 6px 20px rgba(0, 0, 0, 0.35);
+$shadow-lg:   0 16px 48px rgba(0, 0, 0, 0.5);
+$glow-accent: 0 0 16px rgba(10, 132, 255, 0.35);
