@@ -2,14 +2,20 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
     <meta name="description" content="Davinci — Professional photo color grading tool with Lightroom-style adjustments including tone curves, HSL, color grading, and more." />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="theme-color" content="#1e1e22" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Davinci" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="apple-touch-icon" href="./pwa-192.svg" />
+    <link rel="manifest" href="./manifest.json" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
     <title>Davinci — Color Grading Studio</title>
-    <script type="module" src="/src/main.ts"></script>
+    <script type="module" src="./src/main.ts"></script>
   </head>
   <body>
     <div id="app">
@@ -41,6 +47,18 @@
           </div>
         </div>
         <div class="header-right">
+          <button class="btn-secondary btn-pwa-install" id="btn-pwa-install" style="display:none" title="Install Davinci app on device">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M8 2v8M5 7l3 3 3-3M3 13h10" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span>Install App</span>
+          </button>
+          <button class="btn-secondary btn-mobile-toggle" id="btn-toggle-panels" title="Toggle Adjustments Sheet">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M3 4h10M3 8h10M3 12h10" stroke-linecap="round"/>
+            </svg>
+            <span>Controls</span>
+          </button>
           <button class="btn-secondary" id="btn-reset" title="Reset active photo adjustments">Reset</button>
           <button class="btn-secondary" id="btn-open-folder" title="Point and open a folder with photos">
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">

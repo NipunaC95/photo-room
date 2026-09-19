@@ -1,0 +1,30 @@
+{
+  "name": "Davinci — Color Grading Studio",
+  "short_name": "Davinci",
+  "description": "Professional photo color grading tool with Lightroom-style adjustments, Tone Curves, HSL, Color Grading, RAW & 16-bit TIFF support.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#141416",
+  "theme_color": "#1e1e22",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "./pwa-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./pwa-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
