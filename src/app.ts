@@ -129,50 +129,49 @@ export class App {
   }
 
   private initPanels(): void {
-    const adj = this.adjustments;
-
     this.basicPanel = new BasicPanel(
       document.getElementById('panel-basic')!,
-      adj.basic,
-      (v) => { adj.basic = v; this.onAdjustmentsChanged(); }
+      this.adjustments.basic,
+      (v) => { this.adjustments.basic = v; this.onAdjustmentsChanged(); }
     );
 
     this.curvePanel = new ToneCurvePanel(
       document.getElementById('panel-curve')!,
-      adj.curves as CurveAdjustments,
-      (v) => { adj.curves = v; this.onAdjustmentsChanged(); }
+      this.adjustments.curves as CurveAdjustments,
+      (v) => { this.adjustments.curves = v; this.onAdjustmentsChanged(); }
     );
 
     this.hslPanel = new HSLPanel(
       document.getElementById('panel-hsl')!,
-      adj.hsl,
-      (v) => { adj.hsl = v; this.onAdjustmentsChanged(); }
+      this.adjustments.hsl,
+      (v) => { this.adjustments.hsl = v; this.onAdjustmentsChanged(); }
     );
 
     this.gradingPanel = new ColorGradingPanel(
       document.getElementById('panel-grading')!,
-      adj.grading,
-      (v) => { adj.grading = v; this.onAdjustmentsChanged(); }
+      this.adjustments.grading,
+      (v) => { this.adjustments.grading = v; this.onAdjustmentsChanged(); }
     );
 
     this.detailPanel = new DetailPanel(
       document.getElementById('panel-detail')!,
-      adj.detail,
-      (v) => { adj.detail = v; this.onAdjustmentsChanged(); }
+      this.adjustments.detail,
+      (v) => { this.adjustments.detail = v; this.onAdjustmentsChanged(); }
     );
 
     this.effectsPanel = new EffectsPanel(
       document.getElementById('panel-effects')!,
-      adj.effects,
-      (v) => { adj.effects = v; this.onAdjustmentsChanged(); }
+      this.adjustments.effects,
+      (v) => { this.adjustments.effects = v; this.onAdjustmentsChanged(); }
     );
 
     this.calibrationPanel = new CalibrationPanel(
       document.getElementById('panel-calibration')!,
-      adj.calibration,
-      (v) => { adj.calibration = v; this.onAdjustmentsChanged(); }
+      this.adjustments.calibration,
+      (v) => { this.adjustments.calibration = v; this.onAdjustmentsChanged(); }
     );
   }
+
 
   private bindEvents(): void {
     // Open Folder buttons
