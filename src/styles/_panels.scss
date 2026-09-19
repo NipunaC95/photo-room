@@ -455,4 +455,172 @@
   box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
 }
 
+// ----- Layers Panel -----
+.layers-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  margin-top: $space-2;
+}
+
+.layer-item {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid $border-subtle;
+  border-radius: $radius-md;
+  padding: $space-2;
+  transition: all $transition-fast;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+
+  &.active {
+    background: rgba($apple-blue, 0.12);
+    border-color: $apple-blue;
+    box-shadow: 0 0 0 1px rgba($apple-blue, 0.3);
+  }
+
+  &.disabled {
+    opacity: 0.5;
+  }
+}
+
+.base-layer {
+  background: rgba(255, 255, 255, 0.02);
+  border-style: dashed;
+  cursor: pointer;
+
+  .layer-item-main {
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+    padding: 2px 0;
+  }
+
+  .layer-icon {
+    font-size: 13px;
+  }
+
+  .layer-name {
+    font-weight: 600;
+    font-size: 11px;
+    color: $text-primary;
+    flex: 1;
+  }
+
+  .layer-badge {
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    background: rgba(255, 255, 255, 0.1);
+    color: $text-muted;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+}
+
+.layer-item-header {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  margin-bottom: 6px;
+}
+
+.layer-toggle-btn {
+  background: none;
+  border: none;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0 2px;
+  opacity: 0.8;
+  transition: opacity $transition-fast;
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
+.layer-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: $text-primary;
+  flex: 1;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  &:hover {
+    color: $apple-blue;
+  }
+}
+
+.layer-name-input {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid $apple-blue;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 11px;
+  padding: 2px 6px;
+  outline: none;
+}
+
+.layer-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.layer-act-btn {
+  background: transparent;
+  border: none;
+  color: $text-muted;
+  font-size: 10px;
+  padding: 2px 4px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.12);
+    color: $text-primary;
+  }
+
+  &:disabled {
+    opacity: 0.25;
+    cursor: not-allowed;
+  }
+}
+
+.layer-item-opacity {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  margin-top: 4px;
+}
+
+.layer-opacity-label {
+  font-size: 9px;
+  font-weight: 500;
+  color: $text-muted;
+  width: 42px;
+  flex-shrink: 0;
+}
+
+.layer-opacity-slider {
+  flex: 1;
+}
+
+.layer-opacity-val {
+  font-size: 9px;
+  font-family: $font-mono;
+  color: $text-secondary;
+  width: 30px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+
 

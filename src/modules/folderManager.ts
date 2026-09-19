@@ -5,7 +5,9 @@
 
 import type { Adjustments } from './processor';
 import { defaultAdjustments } from './processor';
-import { isRawOrTiff, decodeRawFile } from './raw';
+import type { LayeredAdjustments } from './layers';
+import { createDefaultLayeredAdjustments, flattenAdjustments } from './layers';
+import { isRawOrTiff } from './raw';
 import type { CameraMetadata } from './raw';
 
 export interface BatchItem {
@@ -16,6 +18,7 @@ export interface BatchItem {
   type: string;
   isRaw: boolean;
   thumbnailUrl: string;
+  layeredAdjustments: LayeredAdjustments;
   adjustments: Adjustments;
   isEdited: boolean;
   handle?: FileSystemFileHandle;
@@ -28,7 +31,7 @@ export interface FolderEditsData {
   appName: string;
   folderName: string;
   updatedAt: string;
-  edits: Record<string, Adjustments>;
+  edits: Record<string, LayeredAdjustments | Adjustments>;
 }
 
 export class FolderManager {
@@ -38,7 +41,7 @@ export class FolderManager {
   private dirHandle: FileSystemDirectoryHandle | null = null;
   private editsJsonHandle: FileSystemFileHandle | null = null;
   private saveDebounceTimer: number | null = null;
-  private copiedAdjustments: Adjustments | null = null;
+  private copiedLayered: LayeredAdjustments | null = null;
 
   private onBatchChanged?: (items: BatchItem[], activeIndex: number) => void;
   private onActiveChanged?: (item: BatchItem, index: number) => void;
@@ -74,11 +77,29 @@ export class FolderManager {
   }
 
   public setCopiedAdjustments(adj: Adjustments): void {
-    this.copiedAdjustments = JSON.parse(JSON.stringify(adj));
+    const item = this.getActiveItem();
+    if (item) {
+      this.copiedLayered = JSON.parse(JSON.stringify(item.layeredAdjustments));
+    } else {
+      this.copiedLayered = {
+        base: JSON.parse(JSON.stringify(adj)),
+        layers: [],
+        activeLayerId: 'base',
+      };
+    }
   }
 
   public getCopiedAdjustments(): Adjustments | null {
-    return this.copiedAdjustments ? JSON.parse(JSON.stringify(this.copiedAdjustments)) : null;
+    if (!this.copiedLayered) return null;
+    return flattenAdjustments(this.copiedLayered);
+  }
+
+  public setCopiedLayered(layered: LayeredAdjustments): void {
+    this.copiedLayered = JSON.parse(JSON.stringify(layered));
+  }
+
+  public getCopiedLayered(): LayeredAdjustments | null {
+    return this.copiedLayered ? JSON.parse(JSON.stringify(this.copiedLayered)) : null;
   }
 
   /** Point and open a folder using the File System Access API */
@@ -134,7 +155,7 @@ export class FolderManager {
     fileEntries.sort((a, b) => a.file.name.localeCompare(b.file.name, undefined, { numeric: true, sensitivity: 'base' }));
 
     // Parse pre-existing edits JSON if present
-    const editsMap: Record<string, Adjustments> = {};
+    const editsMap: Record<string, LayeredAdjustments | Adjustments> = {};
     if (savedEditsJsonText) {
       try {
         const parsed: FolderEditsData = JSON.parse(savedEditsJsonText);
@@ -159,7 +180,7 @@ export class FolderManager {
     }
   }
 
-  /** Load batch from HTML FileList / File array (e.g. drop or input webkitdirectory) */
+  /** Load batch from HTML FileList / File array */
   public async loadFromFiles(files: FileList | File[], folderLabel = 'Imported Folder'): Promise<void> {
     this.clear();
     this.folderName = folderLabel;
@@ -180,7 +201,6 @@ export class FolderManager {
       }
     }
 
-    // Try reading cached JSON from localStorage if not provided in files
     if (!savedEditsJsonText) {
       const cacheKey = `davinci_edits_${this.folderName}`;
       const cached = localStorage.getItem(cacheKey);
@@ -189,7 +209,7 @@ export class FolderManager {
 
     imageFiles.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
 
-    const editsMap: Record<string, Adjustments> = {};
+    const editsMap: Record<string, LayeredAdjustments | Adjustments> = {};
     if (savedEditsJsonText) {
       try {
         const parsed: FolderEditsData = JSON.parse(savedEditsJsonText);
@@ -213,18 +233,40 @@ export class FolderManager {
     }
   }
 
-  /** Update adjustments for active item and schedule JSON auto-save */
+  /** Update active item with new LayeredAdjustments */
+  public updateActiveLayeredAdjustments(layered: LayeredAdjustments): void {
+    const item = this.getActiveItem();
+    if (!item) return;
+
+    item.layeredAdjustments = JSON.parse(JSON.stringify(layered));
+    item.adjustments = flattenAdjustments(item.layeredAdjustments);
+    item.isEdited = this.checkIsEdited(item.adjustments);
+
+    this.saveToLocalStorage();
+    this.scheduleSaveEditsJson();
+  }
+
+  /** Update adjustments for active item (legacy compatibility) */
   public updateActiveAdjustments(adj: Adjustments): void {
     const item = this.getActiveItem();
     if (!item) return;
 
-    item.adjustments = JSON.parse(JSON.stringify(adj));
+    const activeId = item.layeredAdjustments?.activeLayerId || 'base';
+    if (activeId === 'base') {
+      item.layeredAdjustments.base = JSON.parse(JSON.stringify(adj));
+    } else {
+      const layer = item.layeredAdjustments.layers.find(l => l.id === activeId);
+      if (layer) {
+        layer.adjustments = JSON.parse(JSON.stringify(adj));
+      } else {
+        item.layeredAdjustments.base = JSON.parse(JSON.stringify(adj));
+      }
+    }
+
+    item.adjustments = flattenAdjustments(item.layeredAdjustments);
     item.isEdited = this.checkIsEdited(item.adjustments);
 
-    // Save to LocalStorage cache immediately
     this.saveToLocalStorage();
-
-    // Schedule debounced file save to davinci_edits.json in directory if handle is open
     this.scheduleSaveEditsJson();
   }
 
@@ -253,6 +295,7 @@ export class FolderManager {
   public resetItemAdjustments(index: number): void {
     if (index < 0 || index >= this.items.length) return;
     const item = this.items[index];
+    item.layeredAdjustments = createDefaultLayeredAdjustments();
     item.adjustments = defaultAdjustments();
     item.isEdited = false;
 
@@ -267,7 +310,12 @@ export class FolderManager {
   public setItemAdjustments(index: number, adj: Adjustments): void {
     if (index < 0 || index >= this.items.length) return;
     const item = this.items[index];
-    item.adjustments = JSON.parse(JSON.stringify(adj));
+    item.layeredAdjustments = {
+      base: JSON.parse(JSON.stringify(adj)),
+      layers: [],
+      activeLayerId: 'base',
+    };
+    item.adjustments = flattenAdjustments(item.layeredAdjustments);
     item.isEdited = this.checkIsEdited(item.adjustments);
 
     if (index === this.activeIndex) {
@@ -297,14 +345,14 @@ export class FolderManager {
 
   /** Generate current folder's edits JSON structure */
   public getEditsJsonData(): FolderEditsData {
-    const edits: Record<string, Adjustments> = {};
+    const edits: Record<string, LayeredAdjustments> = {};
     for (const item of this.items) {
       if (item.isEdited) {
-        edits[item.name] = item.adjustments;
+        edits[item.name] = item.layeredAdjustments;
       }
     }
     return {
-      version: '1.0',
+      version: '2.0',
       appName: 'Davinci',
       folderName: this.folderName,
       updatedAt: new Date().toISOString(),
@@ -325,7 +373,6 @@ export class FolderManager {
     URL.revokeObjectURL(url);
   }
 
-  /** Schedule debounced saving of davinci_edits.json to pointed directory */
   private scheduleSaveEditsJson(): void {
     this.notifySyncStatus('saving');
     if (this.saveDebounceTimer !== null) {
@@ -338,7 +385,6 @@ export class FolderManager {
     }, 600);
   }
 
-  /** Write davinci_edits.json directly into directory handle if available */
   private async saveEditsJsonToFolder(): Promise<void> {
     const editsData = this.getEditsJsonData();
     const jsonStr = JSON.stringify(editsData, null, 2);
@@ -360,7 +406,6 @@ export class FolderManager {
       }
     }
 
-    // Local storage fallback
     this.saveToLocalStorage();
     this.notifySyncStatus('local');
   }
@@ -375,10 +420,26 @@ export class FolderManager {
     }
   }
 
-  private async createBatchItem(file: File, handle?: FileSystemFileHandle, savedAdj?: Adjustments): Promise<BatchItem> {
+  private async createBatchItem(file: File, handle?: FileSystemFileHandle, saved?: LayeredAdjustments | Adjustments): Promise<BatchItem> {
     const isRaw = isRawOrTiff(file);
-    const adj = savedAdj ? JSON.parse(JSON.stringify(savedAdj)) : defaultAdjustments();
-    const isEdited = this.checkIsEdited(adj);
+    let layered: LayeredAdjustments;
+
+    if (saved) {
+      if ('base' in saved && 'layers' in saved) {
+        layered = JSON.parse(JSON.stringify(saved));
+      } else {
+        layered = {
+          base: JSON.parse(JSON.stringify(saved)),
+          layers: [],
+          activeLayerId: 'base',
+        };
+      }
+    } else {
+      layered = createDefaultLayeredAdjustments();
+    }
+
+    const flatAdj = flattenAdjustments(layered);
+    const isEdited = this.checkIsEdited(flatAdj);
     const thumbnailUrl = await this.generateThumbnail(file, isRaw);
 
     return {
@@ -389,7 +450,8 @@ export class FolderManager {
       type: file.type || (isRaw ? 'image/x-raw' : 'image/jpeg'),
       isRaw,
       thumbnailUrl,
-      adjustments: adj,
+      layeredAdjustments: layered,
+      adjustments: flatAdj,
       isEdited,
       handle,
     };
@@ -398,142 +460,53 @@ export class FolderManager {
   private async generateThumbnail(file: File, isRaw: boolean): Promise<string> {
     if (isRaw) {
       try {
-        const buffer = await file.arrayBuffer();
-        const decoded = await decodeRawFile(buffer, file.name);
-        return this.createCanvasThumbnail(decoded.width, decoded.height, decoded.floatData);
-      } catch (e) {
-        console.warn('Failed to render RAW thumbnail, using placeholder:', e);
-        return this.createPlaceholderThumbnail(file.name);
-      }
-    }
-
-    // Standard image thumbnail
-    return new Promise((resolve) => {
-      const url = URL.createObjectURL(file);
-      const img = new Image();
-      img.onload = () => {
+        const { decodeRawFile } = await import('./raw');
+        const rawData = await decodeRawFile(file);
         const canvas = document.createElement('canvas');
-        const maxDim = 160;
-        const scale = Math.min(maxDim / img.naturalWidth, maxDim / img.naturalHeight, 1);
-        canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
-        canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
+        canvas.width = Math.min(rawData.width, 300);
+        canvas.height = Math.round((canvas.width / rawData.width) * rawData.height);
         const ctx = canvas.getContext('2d');
         if (ctx) {
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          canvas.toBlob((blob) => {
-            URL.revokeObjectURL(url);
-            if (blob) resolve(URL.createObjectURL(blob));
-            else resolve(url);
-          }, 'image/jpeg', 0.85);
-        } else {
-          resolve(url);
+          const imgData = ctx.createImageData(rawData.width, rawData.height);
+          imgData.data.set(rawData.previewData);
+          const tempCanvas = document.createElement('canvas');
+          tempCanvas.width = rawData.width;
+          tempCanvas.height = rawData.height;
+          const tempCtx = tempCanvas.getContext('2d');
+          if (tempCtx) {
+            tempCtx.putImageData(imgData, 0, 0);
+            ctx.drawImage(tempCanvas, 0, 0, canvas.width, canvas.height);
+            return canvas.toDataURL('image/jpeg', 0.85);
+          }
         }
-      };
-      img.onerror = () => resolve(url);
-      img.src = url;
-    });
-  }
-
-  private createCanvasThumbnail(width: number, height: number, floatData: Float32Array): string {
-    const canvas = document.createElement('canvas');
-    const maxDim = 160;
-    const scale = Math.min(maxDim / width, maxDim / height, 1);
-    const thumbW = Math.max(1, Math.round(width * scale));
-    const thumbH = Math.max(1, Math.round(height * scale));
-    canvas.width = thumbW;
-    canvas.height = thumbH;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return '';
-
-    const imgData = ctx.createImageData(thumbW, thumbH);
-    const data = imgData.data;
-
-    // Nearest neighbor downscale from float RGBA
-    for (let y = 0; y < thumbH; y++) {
-      const srcY = Math.min(height - 1, Math.floor(y / scale));
-      for (let x = 0; x < thumbW; x++) {
-        const srcX = Math.min(width - 1, Math.floor(x / scale));
-        const srcIdx = (srcY * width + srcX) * 4;
-        const dstIdx = (y * thumbW + x) * 4;
-
-        data[dstIdx + 0] = Math.min(255, Math.max(0, Math.round(floatData[srcIdx + 0] * 255)));
-        data[dstIdx + 1] = Math.min(255, Math.max(0, Math.round(floatData[srcIdx + 1] * 255)));
-        data[dstIdx + 2] = Math.min(255, Math.max(0, Math.round(floatData[srcIdx + 2] * 255)));
-        data[dstIdx + 3] = 255;
+      } catch (err) {
+        console.warn('Failed to extract RAW thumbnail:', err);
       }
     }
-    ctx.putImageData(imgData, 0, 0);
-    return canvas.toDataURL('image/jpeg', 0.85);
-  }
-
-  private createPlaceholderThumbnail(filename: string): string {
-    const canvas = document.createElement('canvas');
-    canvas.width = 160;
-    canvas.height = 120;
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      ctx.fillStyle = '#1e1e24';
-      ctx.fillRect(0, 0, 160, 120);
-      ctx.fillStyle = '#0a84ff';
-      ctx.font = '600 12px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('RAW PHOTO', 80, 55);
-      ctx.fillStyle = '#8a8a9e';
-      ctx.font = '10px monospace';
-      ctx.fillText(filename.slice(0, 16), 80, 75);
-    }
-    return canvas.toDataURL('image/jpeg');
-  }
-
-  private isImageFile(filename: string): boolean {
-    const ext = filename.slice(filename.lastIndexOf('.')).toLowerCase();
-    const valid = [
-      '.jpg', '.jpeg', '.png', '.webp', '.bmp',
-      '.dng', '.cr2', '.cr3', '.nef', '.nrw', '.arw', '.srf', '.sr2',
-      '.orf', '.rw2', '.pef', '.raf', '.tif', '.tiff'
-    ];
-    return valid.includes(ext);
+    return URL.createObjectURL(file);
   }
 
   private checkIsEdited(adj: Adjustments): boolean {
     const def = defaultAdjustments();
-    return (
-      adj.basic.temperature !== def.basic.temperature ||
-      adj.basic.exposure !== def.basic.exposure ||
-      adj.basic.contrast !== def.basic.contrast ||
-      adj.basic.highlights !== def.basic.highlights ||
-      adj.basic.shadows !== def.basic.shadows ||
-      adj.basic.vibrance !== def.basic.vibrance ||
-      adj.basic.saturation !== def.basic.saturation ||
-      adj.curves.rgb.length > 2 ||
-      adj.hsl.some(h => h.hue !== 0 || h.saturation !== 0 || h.luminance !== 0) ||
-      adj.grading.shadows.hue !== 0 || adj.grading.highlights.hue !== 0 ||
-      adj.effects.vignetteAmount !== 0 || adj.effects.grainAmount !== 0
-    );
+    return JSON.stringify(adj) !== JSON.stringify(def);
   }
 
-  private clear(): void {
-    for (const item of this.items) {
-      if (item.thumbnailUrl.startsWith('blob:')) {
-        URL.revokeObjectURL(item.thumbnailUrl);
-      }
-    }
+  private isImageFile(filename: string): boolean {
+    const ext = filename.split('.').pop()?.toLowerCase() || '';
+    return ['jpg', 'jpeg', 'png', 'webp', 'tiff', 'tif', 'dng', 'cr2', 'nef', 'arw'].includes(ext);
+  }
+
+  public clear(): void {
+    this.items.forEach(item => URL.revokeObjectURL(item.thumbnailUrl));
     this.items = [];
     this.activeIndex = -1;
-    this.dirHandle = null;
-    this.editsJsonHandle = null;
   }
 
   private notifyBatchChanged(): void {
-    if (this.onBatchChanged) {
-      this.onBatchChanged(this.items, this.activeIndex);
-    }
+    if (this.onBatchChanged) this.onBatchChanged(this.items, this.activeIndex);
   }
 
   private notifySyncStatus(status: 'synced' | 'saving' | 'unsaved' | 'local'): void {
-    if (this.onSyncStatusChanged) {
-      this.onSyncStatusChanged(status);
-    }
+    if (this.onSyncStatusChanged) this.onSyncStatusChanged(status);
   }
 }
