@@ -37,23 +37,6 @@
   min-width: 220px;
 }
 
-// macOS Traffic Lights
-.mac-window-controls {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-
-  .mac-dot {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    display: inline-block;
-
-    &.close { background: #ff5f56; border: 0.5px solid rgba(0,0,0,0.25); }
-    &.minimize { background: #ffbd2e; border: 0.5px solid rgba(0,0,0,0.25); }
-    &.zoom { background: #27c93f; border: 0.5px solid rgba(0,0,0,0.25); }
-  }
-}
 
 .header-center {
   flex: 1;
