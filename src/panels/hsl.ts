@@ -135,7 +135,8 @@ export class HSLPanel {
   private updateFill(input: HTMLInputElement, min: number, max: number): void {
     const v = parseFloat(input.value);
     const pct = ((v - min) / (max - min)) * 100;
-    input.style.background = `linear-gradient(90deg, #e96fff ${pct}%, #2e2e35 ${pct}%)`;
+    input.style.background = `linear-gradient(90deg, #0a84ff ${pct}%, rgba(255,255,255,0.12) ${pct}%)`;
+
   }
 
   private fmt(v: number): string {

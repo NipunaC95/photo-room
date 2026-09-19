@@ -475,7 +475,7 @@ export class FolderManager {
     if (ctx) {
       ctx.fillStyle = '#1e1e24';
       ctx.fillRect(0, 0, 160, 120);
-      ctx.fillStyle = '#e96fff';
+      ctx.fillStyle = '#0a84ff';
       ctx.font = '600 12px sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText('RAW PHOTO', 80, 55);

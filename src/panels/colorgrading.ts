@@ -103,14 +103,14 @@ export class ColorGradingPanel {
     input.step = '1';
     input.value = String(initial);
     const pct = ((initial - min) / (max - min)) * 100;
-    input.style.background = `linear-gradient(90deg, #e96fff ${pct}%, #2e2e35 ${pct}%)`;
+    input.style.background = `linear-gradient(90deg, #0a84ff ${pct}%, #2e2e35 ${pct}%)`;
     const display = document.createElement('span');
     display.className = 'slider-value';
     display.textContent = `${initial > 0 ? '+' : ''}${initial}`;
     input.addEventListener('input', () => {
       const v = parseInt(input.value);
       const p = ((v - min) / (max - min)) * 100;
-      input.style.background = `linear-gradient(90deg, #e96fff ${p}%, #2e2e35 ${p}%)`;
+      input.style.background = `linear-gradient(90deg, #0a84ff ${p}%, #2e2e35 ${p}%)`;
       display.textContent = `${v > 0 ? '+' : ''}${v}`;
       onChange(v);
     });
@@ -243,14 +243,14 @@ class WheelControl {
     input.step = '1';
     input.value = String(this.value.luminance);
     const pct = ((this.value.luminance + 100) / 200) * 100;
-    input.style.background = `linear-gradient(90deg, #e96fff ${pct}%, #2e2e35 ${pct}%)`;
+    input.style.background = `linear-gradient(90deg, #0a84ff ${pct}%, #2e2e35 ${pct}%)`;
     const display = document.createElement('span');
     display.className = 'slider-value';
     display.textContent = `${this.value.luminance > 0 ? '+' : ''}${this.value.luminance}`;
     input.addEventListener('input', () => {
       const v = parseInt(input.value);
       const p = ((v + 100) / 200) * 100;
-      input.style.background = `linear-gradient(90deg, #e96fff ${p}%, #2e2e35 ${p}%)`;
+      input.style.background = `linear-gradient(90deg, #0a84ff ${p}%, #2e2e35 ${p}%)`;
       display.textContent = `${v > 0 ? '+' : ''}${v}`;
       this.value.luminance = v;
       this.onChange({ ...this.value });

@@ -419,7 +419,7 @@ export class App {
           grad.addColorStop(1, '#24243e');
           ctx.fillStyle = grad;
           ctx.fillRect(0, 0, w, h);
-          ctx.strokeStyle = '#e96fff';
+          ctx.strokeStyle = '#0a84ff';
           ctx.lineWidth = 12;
           ctx.strokeRect(80, 80, w - 160, h - 160);
           ctx.strokeStyle = '#4fc3ff';
@@ -474,7 +474,7 @@ export class App {
     if (meta && (meta.make || meta.model)) {
       this.exifChip.style.display = 'inline-flex';
       const cam = meta.model || meta.make || 'Camera RAW';
-      this.exifChip.innerHTML = `<span style="color:#e96fff;font-weight:600">${cam}</span> · ${meta.focalLength || ''} · ${meta.aperture || ''} · ${meta.shutterSpeed || ''} · ISO ${meta.iso || ''}`;
+      this.exifChip.innerHTML = `<span style="color:#0a84ff;font-weight:600">${cam}</span> · ${meta.focalLength || ''} · ${meta.aperture || ''} · ${meta.shutterSpeed || ''} · ISO ${meta.iso || ''}`;
     } else {
       this.exifChip.style.display = 'none';
     }
@@ -606,7 +606,7 @@ export class App {
       transform: translateX(-50%);
       background: rgba(22, 22, 24, 0.9);
       backdrop-filter: blur(8px);
-      color: #e96fff;
+      color: #0a84ff;
       border: 1px solid rgba(233, 111, 255, 0.3);
       padding: 6px 16px;
       border-radius: 9999px;
