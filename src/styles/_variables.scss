@@ -16,15 +16,16 @@ $glass-border:    rgba(255, 255, 255, 0.12);
 
 // -- Apple System Accent Colors (macOS Dark Mode Tint) --
 $apple-blue:      #0a84ff; // macOS System Blue
-$apple-purple:    #bf5af2; // macOS System Purple
-$apple-indigo:    #5e5ce6; // macOS System Indigo
-$apple-orange:    #ff9f0a; // macOS System Orange
-$apple-green:     #30d158; // macOS System Green
-$apple-red:       #ff453a; // macOS System Red
+$apple-cyan:      #38bdf8; // Apple Bright Blue
+$apple-purple:    #0a84ff; // Replaced with Apple Blue
+$apple-indigo:    #0a84ff;
+$apple-orange:    #ff9f0a;
+$apple-green:     #30d158;
+$apple-red:       #ff453a;
 
-$accent-purple:   #bf5af2;
+$accent-purple:   #0a84ff;
 $accent-blue:     #0a84ff;
-$accent-gradient: linear-gradient(135deg, #0a84ff 0%, #bf5af2 100%);
+$accent-gradient: linear-gradient(135deg, #0a84ff 0%, #38bdf8 100%);
 
 // -- macOS Border & Separation Lines --
 $border-subtle:   rgba(255, 255, 255, 0.07);
@@ -39,8 +40,9 @@ $text-disabled:   #424245;
 
 // -- macOS Native Slider Styling --
 $slider-track:    rgba(255, 255, 255, 0.12);
-$slider-fill:     linear-gradient(90deg, #0a84ff, #bf5af2);
+$slider-fill:     linear-gradient(90deg, #0a84ff, #38bdf8);
 $slider-thumb:    #ffffff;
+
 
 // -- HSL & Color Wheels --
 $color-red:       #ff453a;
