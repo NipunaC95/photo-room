@@ -1083,6 +1083,49 @@
   width: 30px;
 }
 
+// ----- Mobile & Touch Input Enhancements -----
+@media (max-width: 768px) {
+  .slider-track-wrap {
+    height: 32px;
+    touch-action: none;
+  }
+
+  .slider {
+    height: 6px;
+
+    &::-webkit-slider-thumb {
+      width: 22px;
+      height: 22px;
+    }
+
+    &::-moz-range-thumb {
+      width: 22px;
+      height: 22px;
+    }
+  }
+
+  .slider-row {
+    margin-bottom: 12px;
+  }
+
+  .slider-label {
+    width: 76px;
+    font-size: 11px;
+  }
+
+  .panel-tab {
+    height: 28px;
+    padding: 0 10px;
+    font-size: 11px;
+  }
+
+  .mask-tool-btn {
+    padding: 6px 12px;
+    font-size: 11px;
+  }
+}
+
+
 
 
 

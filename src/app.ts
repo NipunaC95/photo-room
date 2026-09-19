@@ -267,6 +267,103 @@ export class App {
   }
 
   private bindEvents(): void {
+    // Mobile controls sheet toggle
+    const togglePanelsBtn = document.getElementById('btn-toggle-panels');
+    const sidebar = document.getElementById('controls-sidebar');
+
+    let backdrop = document.querySelector('.mobile-sheet-backdrop') as HTMLElement;
+    if (!backdrop) {
+      backdrop = document.createElement('div');
+      backdrop.className = 'mobile-sheet-backdrop';
+      document.body.appendChild(backdrop);
+    }
+
+    if (sidebar && !sidebar.querySelector('.mobile-sheet-header')) {
+      const sheetHeader = document.createElement('div');
+      sheetHeader.className = 'mobile-sheet-header';
+      sheetHeader.innerHTML = `
+        <div class="mobile-sheet-drag-handle"></div>
+        <button class="mobile-sheet-close" id="btn-close-mobile-sheet" title="Close Panel">&times;</button>
+      `;
+      sidebar.insertBefore(sheetHeader, sidebar.firstChild);
+
+      sheetHeader.addEventListener('click', () => {
+        sidebar.classList.remove('mobile-open');
+        backdrop.classList.remove('active');
+      });
+    }
+
+    const closeMobileSheet = () => {
+      sidebar?.classList.remove('mobile-open');
+      backdrop?.classList.remove('active');
+    };
+
+    togglePanelsBtn?.addEventListener('click', () => {
+      const isOpen = sidebar?.classList.contains('mobile-open');
+      if (isOpen) {
+        closeMobileSheet();
+      } else {
+        sidebar?.classList.add('mobile-open');
+        backdrop?.classList.add('active');
+      }
+    });
+
+    backdrop.addEventListener('click', closeMobileSheet);
+
+    // PWA Install Prompt
+    let deferredPrompt: any = null;
+    const pwaInstallBtn = document.getElementById('btn-pwa-install');
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      if (pwaInstallBtn) {
+        pwaInstallBtn.style.display = 'inline-flex';
+      }
+    });
+
+    pwaInstallBtn?.addEventListener('click', async () => {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+          pwaInstallBtn.style.display = 'none';
+        }
+        deferredPrompt = null;
+      }
+    });
+
+    // Touch pinch-to-zoom on canvas
+    let touchStartDist = 0;
+    let touchStartZoom = 1;
+    this.mainCanvas.addEventListener('touchstart', (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        touchStartDist = Math.hypot(dx, dy);
+        touchStartZoom = this.zoom;
+      }
+    }, { passive: false });
+
+    this.mainCanvas.addEventListener('touchmove', (e: TouchEvent) => {
+      if (e.touches.length === 2 && touchStartDist > 0) {
+        e.preventDefault();
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        const dist = Math.hypot(dx, dy);
+        const scale = dist / touchStartDist;
+        this.zoom = Math.max(0.05, Math.min(8, touchStartZoom * scale));
+        this.applyZoom();
+        if (this.maskOverlay) this.maskOverlay.resize();
+      }
+    }, { passive: false });
+
+    this.mainCanvas.addEventListener('touchend', (e: TouchEvent) => {
+      if (e.touches.length < 2) {
+        touchStartDist = 0;
+      }
+    });
+
     // Open Folder buttons
     document.getElementById('btn-open-folder')?.addEventListener('click', () => this.handleOpenFolder());
     document.getElementById('btn-drop-open-folder')?.addEventListener('click', () => this.handleOpenFolder());
@@ -381,6 +478,8 @@ export class App {
   private bindNavigation(): void {
     const navItems = document.querySelectorAll('.panel-nav-item');
     const panels = document.querySelectorAll('.panel');
+    const sidebar = document.getElementById('controls-sidebar');
+    const backdrop = document.querySelector('.mobile-sheet-backdrop');
 
     navItems.forEach(item => {
       item.addEventListener('click', () => {
@@ -389,6 +488,11 @@ export class App {
         panels.forEach(p => p.classList.remove('active'));
         item.classList.add('active');
         document.querySelector(`.panel[data-panel="${panelId}"]`)?.classList.add('active');
+
+        if (window.innerWidth <= 768) {
+          sidebar?.classList.add('mobile-open');
+          backdrop?.classList.add('active');
+        }
       });
     });
   }
