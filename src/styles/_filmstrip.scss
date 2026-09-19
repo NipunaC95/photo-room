@@ -265,9 +265,10 @@
 .filmstrip-item {
   display: flex;
   flex-direction: column;
-  width: calc((var(--filmstrip-height, 96px) - 34px) * 1.35);
-  min-width: 60px;
-  max-width: 240px;
+  width: calc((var(--filmstrip-height, 96px) - 30px) * 1.35);
+  height: calc(var(--filmstrip-height, 96px) - 28px);
+  min-width: 56px;
+  max-width: 260px;
   flex-shrink: 0;
   background: $bg-surface;
   border: 1px solid $border-subtle;
@@ -299,11 +300,12 @@
   .thumb-wrapper {
     position: relative;
     width: 100%;
-    height: calc(var(--filmstrip-height, 96px) - 38px);
-    min-height: 36px;
+    flex: 1;
+    min-height: 28px;
     border-radius: 2px;
     overflow: hidden;
     background: #000;
+
 
 
     img {
