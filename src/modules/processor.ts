@@ -208,6 +208,10 @@ uniform float u_rotation;   // angle in radians
 uniform float u_flip_h;     // 0.0 or 1.0
 uniform float u_flip_v;     // 0.0 or 1.0
 
+// --- Spatial Layer Mask Texture ---
+uniform sampler2D u_mask_texture;
+uniform float u_use_mask;
+uniform float u_mask_opacity;
 
 in vec2 v_uv;
 out vec4 fragColor;
@@ -531,8 +535,8 @@ void main() {
     return;
   }
 
-  vec3 col = texture(u_image, uv).rgb;
-
+  vec3 origCol = texture(u_image, uv).rgb;
+  vec3 col = origCol;
 
   // 1. Calibration
   col = applyCalibration(col);
@@ -573,11 +577,7 @@ void main() {
     col = hslToRgb(hsl);
   }
 
-  // 10. Tone Curves — sample pre-baked 10-bit/16-bit float LUT texture (1024 samples)
-  // LUT is a 1024×1 RGBA float texture with hardware linear interpolation:
-  //   .r = r_channel_lut[ rgb_lut[i] ]
-  //   .g = g_channel_lut[ rgb_lut[i] ]
-  //   .b = b_channel_lut[ rgb_lut[i] ]
+  // 10. Tone Curves
   col.r = texture(u_curveLUT, vec2(col.r * (1023.0 / 1024.0) + 0.5 / 1024.0, 0.5)).r;
   col.g = texture(u_curveLUT, vec2(col.g * (1023.0 / 1024.0) + 0.5 / 1024.0, 0.5)).g;
   col.b = texture(u_curveLUT, vec2(col.b * (1023.0 / 1024.0) + 0.5 / 1024.0, 0.5)).b;
@@ -596,6 +596,15 @@ void main() {
 
   // 15. Film Grain
   col = applyGrain(col);
+
+  // Apply spatial mask texture weighting
+  if (u_use_mask > 0.5) {
+    float maskVal = texture(u_mask_texture, uv).a;
+    if (maskVal <= 0.001) {
+      maskVal = texture(u_mask_texture, uv).r;
+    }
+    col = mix(origCol, col, clamp(maskVal * u_mask_opacity, 0.0, 1.0));
+  }
 
   fragColor = vec4(col, 1.0);
 }
@@ -658,10 +667,37 @@ export class ImageProcessor {
   private imageHeight = 0;
   private rafId: number | null = null;
   private dirty = false;
-  private uniforms = new Map<string, WebGLUniformLocation>();
-  private grainSeed = 0;
-  private bitDepth = 8;
-  private rawMetadata: CameraMetadata | null = null;
+  private maskTexture: WebGLTexture | null = null;
+  private useMask = 0;
+  private maskOpacity = 1.0;
+
+  setAdjustments(adj: Adjustments): void {
+    this.adjustments = adj;
+    this.scheduleRender();
+  }
+
+  setMaskTexture(maskCanvas: HTMLCanvasElement | null, opacity = 1.0): void {
+    const gl = this.gl;
+    this.maskOpacity = opacity;
+
+    if (!maskCanvas) {
+      this.useMask = 0;
+      this.scheduleRender();
+      return;
+    }
+
+    this.useMask = 1;
+    if (!this.maskTexture) {
+      this.maskTexture = createTexture(gl, gl.LINEAR);
+    }
+
+    gl.activeTexture(gl.TEXTURE2);
+    gl.bindTexture(gl.TEXTURE_2D, this.maskTexture);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, maskCanvas);
+
+    this.scheduleRender();
+  }
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -730,6 +766,7 @@ export class ImageProcessor {
       'u_grain_amount', 'u_grain_roughness', 'u_grain_seed',
       'u_shadow_tint', 'u_red_primary', 'u_green_primary', 'u_blue_primary',
       'u_crop', 'u_rotation', 'u_flip_h', 'u_flip_v',
+      'u_mask_texture', 'u_use_mask', 'u_mask_opacity',
     ];
 
     for (const name of uniformNames) {
@@ -917,6 +954,10 @@ export class ImageProcessor {
     gl.bindTexture(gl.TEXTURE_2D, this.imageTexture);
     gl.activeTexture(gl.TEXTURE1);
     gl.bindTexture(gl.TEXTURE_2D, this.curveLUTTexture);
+    if (this.maskTexture) {
+      gl.activeTexture(gl.TEXTURE2);
+      gl.bindTexture(gl.TEXTURE_2D, this.maskTexture);
+    }
     gl.drawArrays(gl.TRIANGLES, 0, 6);
     gl.bindVertexArray(null);
   }
@@ -1016,6 +1057,12 @@ export class ImageProcessor {
     set1f('u_rotation', (cr.rotation * Math.PI) / 180);
     set1f('u_flip_h', cr.flipH ? 1.0 : 0.0);
     set1f('u_flip_v', cr.flipV ? 1.0 : 0.0);
+
+    // Spatial Mask Texture
+    const maskLoc = u.get('u_mask_texture');
+    if (maskLoc) gl.uniform1i(maskLoc, 2);
+    set1f('u_use_mask', this.useMask);
+    set1f('u_mask_opacity', this.maskOpacity);
   }
 }
 

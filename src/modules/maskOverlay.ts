@@ -34,8 +34,6 @@ export class MaskOverlay {
   private cursorY = -1000;
 
   private dragHandle: 'linear_start' | 'linear_end' | 'radial_center' | 'radial_border' | 'draw_linear' | 'draw_radial' | null = null;
-  private startMouseX = 0;
-  private startMouseY = 0;
 
   constructor(wrapper: HTMLElement, mainCanvas: HTMLCanvasElement, onChange: () => void) {
     this.wrapper = wrapper;
@@ -207,6 +205,55 @@ export class MaskOverlay {
       }
     }
     this.render();
+  }
+
+  public getMaskCanvas(): HTMLCanvasElement | null {
+    if (!this.activeMask || !this.activeMask.enabled) return null;
+
+    const w = Math.max(10, this.overlayCanvas.width || 800);
+    const h = Math.max(10, this.overlayCanvas.height || 600);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d')!;
+
+    if (this.activeMask.type === 'brush') {
+      ctx.drawImage(this.offscreenMaskCanvas, 0, 0, w, h);
+    } else if (this.activeMask.type === 'linear_gradient' && this.activeMask.linear) {
+      const l = this.activeMask.linear;
+      const grad = ctx.createLinearGradient(l.x1 * w, l.y1 * h, l.x2 * w, l.y2 * h);
+      grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+      grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, w, h);
+    } else if (this.activeMask.type === 'radial_gradient' && this.activeMask.radial) {
+      const r = this.activeMask.radial;
+      const cx = r.cx * w;
+      const cy = r.cy * h;
+      const rx = r.rx * w;
+      const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, rx);
+      grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+      grad.addColorStop(Math.max(0, 1 - r.feather * 0.8), 'rgba(255, 255, 255, 0.7)');
+      grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(cx, cy, rx, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+      ctx.fillRect(0, 0, w, h);
+    }
+
+    if (this.activeMask.inverted) {
+      const imgData = ctx.getImageData(0, 0, w, h);
+      for (let i = 0; i < imgData.data.length; i += 4) {
+        imgData.data[i + 3] = 255 - imgData.data[i + 3];
+      }
+      ctx.putImageData(imgData, 0, 0);
+    }
+
+    return canvas;
   }
 
   public render(): void {
