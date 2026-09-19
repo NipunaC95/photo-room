@@ -1,6 +1,7 @@
 // ============================================================
 // App — Root application controller with multi-photo batch,
-// filmstrip navigation, Adjustment Layers, and davinci_edits.json persistence
+// filmstrip navigation, Hierarchical Layers Tree & Sub-Layer Masks,
+// and davinci_edits.json persistence
 // ============================================================
 import { ImageProcessor, defaultAdjustments } from './modules/processor';
 import type { Adjustments } from './modules/processor';
@@ -18,8 +19,9 @@ import { CalibrationPanel } from './panels/calibration';
 import { CropPanel, defaultCropAdjustments } from './panels/crop';
 import { LayersPanel } from './panels/layersPanel';
 import { FolderManager } from './modules/folderManager';
-import type { LayeredAdjustments } from './modules/layers';
+import type { LayeredAdjustments, SubLayerMask } from './modules/layers';
 import { createDefaultLayeredAdjustments, flattenAdjustments } from './modules/layers';
+import { MaskOverlay } from './modules/maskOverlay';
 
 import type { BatchItem } from './modules/folderManager';
 import { Filmstrip } from './modules/filmstrip';
@@ -31,6 +33,7 @@ export class App {
   private folderManager: FolderManager;
   private filmstrip: Filmstrip;
   private batchExport: BatchExport;
+  private maskOverlay: MaskOverlay;
 
   private layeredAdjustments: LayeredAdjustments = createDefaultLayeredAdjustments();
   private adjustments: Adjustments = defaultAdjustments();
@@ -85,6 +88,14 @@ export class App {
     this.processor = new ImageProcessor(this.mainCanvas);
     this.histogram = new Histogram(document.getElementById('histogram-canvas') as HTMLCanvasElement);
 
+    this.maskOverlay = new MaskOverlay(
+      document.getElementById('canvas-wrapper')!,
+      this.mainCanvas,
+      () => {
+        this.onLayerStateChanged();
+      }
+    );
+
     // Initialize FolderManager & Filmstrip
     this.folderManager = new FolderManager({
       onBatchChanged: (items, activeIndex) => {
@@ -136,6 +147,8 @@ export class App {
       this.layerTargetSelect.addEventListener('change', () => {
         const val = this.layerTargetSelect.value;
         this.layeredAdjustments.activeLayerId = val;
+        this.layeredAdjustments.activeMaskId = undefined;
+        this.maskOverlay.setActiveMask(null);
         this.layersPanel.updateState(this.layeredAdjustments);
         this.syncPanelsToActiveLayer();
       });
@@ -154,8 +167,21 @@ export class App {
         this.layeredAdjustments = newLayeredState;
         this.onLayerStateChanged();
       },
-      (activeLayerId) => {
+      (activeLayerId, activeMaskId) => {
         this.layeredAdjustments.activeLayerId = activeLayerId;
+        this.layeredAdjustments.activeMaskId = activeMaskId;
+
+        let activeMask: SubLayerMask | null = null;
+        if (activeMaskId) {
+          for (const l of this.layeredAdjustments.layers || []) {
+            const found = (l.masks || []).find(m => m.id === activeMaskId);
+            if (found) {
+              activeMask = found;
+              break;
+            }
+          }
+        }
+        this.maskOverlay.setActiveMask(activeMask);
         this.syncPanelsToActiveLayer();
       }
     );
@@ -233,7 +259,8 @@ export class App {
       const opt = document.createElement('option');
       opt.value = layer.id;
       const pct = Math.round(layer.opacity * 100);
-      opt.textContent = `🔷 ${layer.name} (${pct}% opacity)`;
+      const maskCnt = layer.masks ? layer.masks.length : 0;
+      opt.textContent = `🔷 ${layer.name} (${pct}% opacity${maskCnt > 0 ? ` · ${maskCnt} masks` : ''})`;
       this.layerTargetSelect.appendChild(opt);
     });
 
@@ -379,6 +406,7 @@ export class App {
     this.process();
     this.folderManager.updateActiveLayeredAdjustments(this.layeredAdjustments);
     this.updateActiveLayerBar();
+    this.maskOverlay.render();
   }
 
   private async loadBatchItem(item: BatchItem): Promise<void> {
@@ -610,16 +638,19 @@ export class App {
     const scaleY = areaH / imgH;
     this.zoom = Math.min(scaleX, scaleY, 1);
     this.applyZoom();
+    if (this.maskOverlay) this.maskOverlay.resize();
   }
 
   private adjustZoom(delta: number): void {
     this.zoom = Math.max(0.05, Math.min(8, this.zoom + delta));
     this.applyZoom();
+    if (this.maskOverlay) this.maskOverlay.resize();
   }
 
   private resetZoom(): void {
     this.zoom = 1;
     this.applyZoom();
+    if (this.maskOverlay) this.maskOverlay.resize();
   }
 
   private applyZoom(): void {
@@ -645,6 +676,7 @@ export class App {
     this.layeredAdjustments = createDefaultLayeredAdjustments();
     this.adjustments = defaultAdjustments();
     this.layersPanel.updateState(this.layeredAdjustments);
+    this.maskOverlay.setActiveMask(null);
     this.syncPanelsToActiveLayer();
     this.process();
     this.folderManager.updateActiveLayeredAdjustments(this.layeredAdjustments);

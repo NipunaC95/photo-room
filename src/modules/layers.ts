@@ -1,8 +1,52 @@
 // ============================================================
-// Layers System — Stacked Adjustment Layers math & data structures
+// Layers & Sub-Layers System — Hierarchical Tree & Mask Math
 // ============================================================
 import type { Adjustments, ColorGradingWheel } from './processor';
 import { defaultAdjustments } from './processor';
+
+export type MaskType = 'brush' | 'linear_gradient' | 'radial_gradient' | 'color_range' | 'luminance_range';
+
+export interface LinearGradientParams {
+  x1: number; // 0 to 1
+  y1: number; // 0 to 1
+  x2: number; // 0 to 1
+  y2: number; // 0 to 1
+}
+
+export interface RadialGradientParams {
+  cx: number;      // 0 to 1
+  cy: number;      // 0 to 1
+  rx: number;      // 0 to 1
+  ry: number;      // 0 to 1
+  feather: number; // 0 to 1
+}
+
+export interface ColorRangeParams {
+  targetHue: number;    // 0 to 360
+  targetSat: number;    // 0 to 100
+  tolerance: number;    // 0 to 100
+}
+
+export interface LuminanceRangeParams {
+  minLum: number;       // 0 to 100
+  maxLum: number;       // 0 to 100
+  feather: number;      // 0 to 100
+}
+
+export interface SubLayerMask {
+  id: string;
+  name: string;
+  type: MaskType;
+  enabled: boolean;
+  inverted: boolean;
+  linear?: LinearGradientParams;
+  radial?: RadialGradientParams;
+  colorRange?: ColorRangeParams;
+  lumRange?: LuminanceRangeParams;
+  brushDataUrl?: string;
+  brushSize?: number;
+  brushFeather?: number;
+}
 
 export interface Layer {
   id: string;
@@ -10,12 +54,47 @@ export interface Layer {
   enabled: boolean;
   opacity: number; // 0.0 to 1.0 (0% to 100%)
   adjustments: Adjustments;
+  masks: SubLayerMask[];
+  expanded?: boolean;
 }
 
 export interface LayeredAdjustments {
   base: Adjustments;
   layers: Layer[];
-  activeLayerId: string; // 'base' or layer ID
+  activeLayerId: string; // 'base', layer ID, or sub-layer mask ID
+  activeMaskId?: string; // sub-layer mask ID if editing mask handles
+}
+
+export function createDefaultSubLayerMask(type: MaskType, customName?: string): SubLayerMask {
+  const id = `mask-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+  let defaultName = 'Sub-Layer Mask';
+  if (type === 'brush') defaultName = 'Brush Mask';
+  if (type === 'linear_gradient') defaultName = 'Linear Gradient';
+  if (type === 'radial_gradient') defaultName = 'Radial Mask';
+  if (type === 'color_range') defaultName = 'Color Range Mask';
+  if (type === 'luminance_range') defaultName = 'Luminance Range Mask';
+
+  const mask: SubLayerMask = {
+    id,
+    name: customName || defaultName,
+    type,
+    enabled: true,
+    inverted: false,
+    brushSize: 40,
+    brushFeather: 50,
+  };
+
+  if (type === 'linear_gradient') {
+    mask.linear = { x1: 0.2, y1: 0.2, x2: 0.8, y2: 0.8 };
+  } else if (type === 'radial_gradient') {
+    mask.radial = { cx: 0.5, cy: 0.5, rx: 0.35, ry: 0.35, feather: 0.5 };
+  } else if (type === 'color_range') {
+    mask.colorRange = { targetHue: 200, targetSat: 50, tolerance: 30 };
+  } else if (type === 'luminance_range') {
+    mask.lumRange = { minLum: 60, maxLum: 100, feather: 20 };
+  }
+
+  return mask;
 }
 
 export function createDefaultLayer(name: string): Layer {
@@ -25,6 +104,8 @@ export function createDefaultLayer(name: string): Layer {
     enabled: true,
     opacity: 1.0,
     adjustments: defaultAdjustments(),
+    masks: [],
+    expanded: true,
   };
 }
 
@@ -39,8 +120,25 @@ export function createDefaultLayeredAdjustments(): LayeredAdjustments {
 const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
 
 /**
+ * Calculate effective layer weight incorporating layer opacity and sub-layer mask states.
+ */
+export function getLayerWeight(layer: Layer): number {
+  if (!layer.enabled || layer.opacity <= 0) return 0;
+  const activeMasks = (layer.masks || []).filter(m => m.enabled);
+  if (activeMasks.length === 0) return layer.opacity;
+
+  let totalWeight = 1.0;
+  for (const m of activeMasks) {
+    let w = 0.75;
+    if (m.inverted) w = 1.0 - w;
+    totalWeight *= w;
+  }
+  return layer.opacity * totalWeight;
+}
+
+/**
  * Computes the combined Adjustments by stacking all enabled layer adjustments
- * on top of the base adjustments, weighted by each layer's opacity.
+ * on top of the base adjustments, weighted by each layer's opacity and sub-layer masks.
  */
 export function flattenAdjustments(layered: LayeredAdjustments): Adjustments {
   const result = defaultAdjustments();
@@ -64,7 +162,9 @@ export function flattenAdjustments(layered: LayeredAdjustments): Adjustments {
   for (const layer of enabledLayers) {
     const adj = layer.adjustments?.basic;
     if (!adj) continue;
-    const w = layer.opacity;
+    const w = getLayerWeight(layer);
+    if (w <= 0) continue;
+
     tempShift += (adj.temperature - 6500) * w;
     tintShift += adj.tint * w;
     expShift += adj.exposure * w;
@@ -102,7 +202,9 @@ export function flattenAdjustments(layered: LayeredAdjustments): Adjustments {
     for (const layer of enabledLayers) {
       const lHsl = layer.adjustments?.hsl?.[i];
       if (!lHsl) continue;
-      const w = layer.opacity;
+      const w = getLayerWeight(layer);
+      if (w <= 0) continue;
+
       hShift += lHsl.hue * w;
       sShift += lHsl.saturation * w;
       lShift += lHsl.luminance * w;
@@ -123,7 +225,9 @@ export function flattenAdjustments(layered: LayeredAdjustments): Adjustments {
     for (const layer of enabledLayers) {
       const lw = layer.adjustments?.grading?.[wheelKey];
       if (!lw) continue;
-      const w = layer.opacity;
+      const w = getLayerWeight(layer);
+      if (w <= 0) continue;
+
       hShift += lw.hue * w;
       sShift += lw.saturation * w;
       lShift += lw.luminance * w;
@@ -143,7 +247,9 @@ export function flattenAdjustments(layered: LayeredAdjustments): Adjustments {
   let balanceShift = 0;
   for (const layer of enabledLayers) {
     if (!layer.adjustments?.grading) continue;
-    const w = layer.opacity;
+    const w = getLayerWeight(layer);
+    if (w <= 0) continue;
+
     blendingShift += (layer.adjustments.grading.blending - 50) * w;
     balanceShift += layer.adjustments.grading.balance * w;
   }
@@ -156,7 +262,9 @@ export function flattenAdjustments(layered: LayeredAdjustments): Adjustments {
   let nrCol = 0;
   for (const layer of enabledLayers) {
     if (!layer.adjustments?.detail) continue;
-    const w = layer.opacity;
+    const w = getLayerWeight(layer);
+    if (w <= 0) continue;
+
     sharpAmt += layer.adjustments.detail.sharpenAmount * w;
     nrLum += layer.adjustments.detail.nrLuminance * w;
     nrCol += layer.adjustments.detail.nrColor * w;
@@ -173,7 +281,9 @@ export function flattenAdjustments(layered: LayeredAdjustments): Adjustments {
   let grainAmt = 0;
   for (const layer of enabledLayers) {
     if (!layer.adjustments?.effects) continue;
-    const w = layer.opacity;
+    const w = getLayerWeight(layer);
+    if (w <= 0) continue;
+
     vigAmt += layer.adjustments.effects.vignetteAmount * w;
     grainAmt += layer.adjustments.effects.grainAmount * w;
   }
@@ -187,7 +297,9 @@ export function flattenAdjustments(layered: LayeredAdjustments): Adjustments {
   let rHue = 0, rSat = 0, gHue = 0, gSat = 0, bHue = 0, bSat = 0, tint = 0;
   for (const layer of enabledLayers) {
     if (!layer.adjustments?.calibration) continue;
-    const w = layer.opacity;
+    const w = getLayerWeight(layer);
+    if (w <= 0) continue;
+
     const c = layer.adjustments.calibration;
     rHue += c.redHue * w;
     rSat += c.redSaturation * w;
@@ -211,7 +323,9 @@ export function flattenAdjustments(layered: LayeredAdjustments): Adjustments {
   let rotationShift = 0;
   for (const layer of enabledLayers) {
     if (!layer.adjustments?.crop) continue;
-    rotationShift += layer.adjustments.crop.rotation * layer.opacity;
+    const w = getLayerWeight(layer);
+    if (w <= 0) continue;
+    rotationShift += layer.adjustments.crop.rotation * w;
   }
   result.crop = {
     ...base.crop,

@@ -754,6 +754,250 @@
   }
 }
 
+// ----- Quick Mask Toolbar -----
+.mask-quick-toolbar {
+  margin-top: $space-2;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid $border-subtle;
+  border-radius: $radius-md;
+  padding: 6px 8px;
+}
+
+.mask-toolbar-title {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: $text-muted;
+  display: block;
+  margin-bottom: 5px;
+}
+
+.mask-tool-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+}
+
+.mask-quick-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid $border-subtle;
+  border-radius: 4px;
+  color: $text-secondary;
+  font-size: 10px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover {
+    background: rgba(10, 132, 255, 0.2);
+    border-color: $apple-blue;
+    color: #ffffff;
+  }
+
+  &:active {
+    transform: scale(0.96);
+  }
+}
+
+
+
+// ----- Layers Tree View & Sub-Layers -----
+.layers-tree-container {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  margin-top: $space-2;
+}
+
+.layer-tree-node {
+  display: flex;
+  flex-direction: column;
+}
+
+.layer-expand-btn {
+  background: transparent;
+  border: none;
+  color: $text-muted;
+  font-size: 9px;
+  padding: 2px 4px;
+  cursor: pointer;
+
+  &:hover {
+    color: #fff;
+  }
+}
+
+.mask-count-badge {
+  font-size: 9px;
+  font-weight: 600;
+  color: $apple-blue;
+  background: rgba(10, 132, 255, 0.15);
+  padding: 1px 5px;
+  border-radius: 4px;
+  margin-right: 4px;
+}
+
+.add-mask-dropdown-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+.add-mask-btn {
+  background: rgba(10, 132, 255, 0.15);
+  border: 1px solid rgba(10, 132, 255, 0.4);
+  color: $apple-blue;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: $radius-sm;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover {
+    background: $apple-blue;
+    color: #fff;
+  }
+}
+
+.add-mask-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 100;
+  background: #1c1c1e;
+  border: 1px solid $border-default;
+  border-radius: $radius-md;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+  padding: 4px;
+  min-width: 140px;
+}
+
+.add-mask-option {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  color: $text-primary;
+  font-size: 10px;
+  font-weight: 500;
+  padding: 5px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background $transition-fast;
+
+  &:hover {
+    background: rgba(10, 132, 255, 0.2);
+    color: $apple-blue;
+  }
+}
+
+.sublayers-tree-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-left: 16px;
+  margin-top: 4px;
+  border-left: 2px dashed rgba(255, 255, 255, 0.1);
+  margin-left: 12px;
+}
+
+.sublayer-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: $radius-sm;
+  padding: 4px 8px;
+  transition: all $transition-fast;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+
+  &.active {
+    background: rgba(10, 132, 255, 0.15);
+    border-color: $apple-blue;
+  }
+
+  &.disabled {
+    opacity: 0.5;
+  }
+}
+
+.tree-connector {
+  color: $text-muted;
+  font-size: 11px;
+}
+
+.sublayer-icon {
+  font-size: 12px;
+}
+
+.sublayer-name {
+  font-size: 10px;
+  font-weight: 500;
+  color: $text-primary;
+  flex: 1;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  &:hover {
+    color: $apple-blue;
+  }
+}
+
+.sublayer-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sublayer-act-btn {
+  background: transparent;
+  border: 1px solid $border-subtle;
+  color: $text-muted;
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: $text-primary;
+  }
+
+  &.invert-btn.active {
+    background: rgba(255, 159, 10, 0.2);
+    border-color: #ff9f0a;
+    color: #ff9f0a;
+  }
+}
+
+.sublayer-toggle-btn {
+  background: transparent;
+  border: none;
+  font-size: 11px;
+  cursor: pointer;
+  padding: 0 2px;
+  opacity: 0.8;
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
+
 
 
 
