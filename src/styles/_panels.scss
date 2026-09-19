@@ -710,6 +710,51 @@
   }
 }
 
+// ----- Active Target Layer Context Bar -----
+.active-layer-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-2;
+  padding: 6px 12px;
+  background: rgba(10, 132, 255, 0.08);
+  border-bottom: 1px solid rgba(10, 132, 255, 0.2);
+}
+
+.layer-bar-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: $apple-blue;
+  flex-shrink: 0;
+}
+
+.layer-target-select {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(10, 132, 255, 0.4);
+  border-radius: $radius-sm;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  outline: none;
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover {
+    border-color: $apple-blue;
+    background: rgba(0, 0, 0, 0.7);
+  }
+
+  option {
+    background: #1c1c1e;
+    color: #ffffff;
+  }
+}
+
+
 
 
 

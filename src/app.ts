@@ -59,6 +59,7 @@ export class App {
   private exifChip: HTMLElement;
   private exportFormatSelect: HTMLSelectElement;
   private filmstripContainer: HTMLElement;
+  private layerTargetSelect: HTMLSelectElement;
 
   // State
   private zoom = 1;
@@ -79,6 +80,7 @@ export class App {
     this.exifChip = document.getElementById('exif-chip')!;
     this.exportFormatSelect = document.getElementById('export-format-select') as HTMLSelectElement;
     this.filmstripContainer = document.getElementById('filmstrip-container')!;
+    this.layerTargetSelect = document.getElementById('layer-target-select') as HTMLSelectElement;
 
     this.processor = new ImageProcessor(this.mainCanvas);
     this.histogram = new Histogram(document.getElementById('histogram-canvas') as HTMLCanvasElement);
@@ -129,6 +131,15 @@ export class App {
     });
 
     this.batchExport = new BatchExport(document.getElementById('batch-export-modal')!);
+
+    if (this.layerTargetSelect) {
+      this.layerTargetSelect.addEventListener('change', () => {
+        const val = this.layerTargetSelect.value;
+        this.layeredAdjustments.activeLayerId = val;
+        this.layersPanel.updateState(this.layeredAdjustments);
+        this.syncPanelsToActiveLayer();
+      });
+    }
 
     this.initPanels();
     this.bindEvents();
@@ -207,6 +218,26 @@ export class App {
     }
     const layer = (this.layeredAdjustments.layers || []).find(l => l.id === activeId);
     return layer ? layer.adjustments : this.layeredAdjustments.base;
+  }
+
+  private updateActiveLayerBar(): void {
+    if (!this.layerTargetSelect) return;
+    this.layerTargetSelect.innerHTML = '';
+
+    const baseOpt = document.createElement('option');
+    baseOpt.value = 'base';
+    baseOpt.textContent = '🌐 Global Base';
+    this.layerTargetSelect.appendChild(baseOpt);
+
+    (this.layeredAdjustments.layers || []).forEach(layer => {
+      const opt = document.createElement('option');
+      opt.value = layer.id;
+      const pct = Math.round(layer.opacity * 100);
+      opt.textContent = `🔷 ${layer.name} (${pct}% opacity)`;
+      this.layerTargetSelect.appendChild(opt);
+    });
+
+    this.layerTargetSelect.value = this.layeredAdjustments.activeLayerId || 'base';
   }
 
   private bindEvents(): void {
@@ -340,12 +371,14 @@ export class App {
     this.adjustments = flattenAdjustments(this.layeredAdjustments);
     this.process();
     this.folderManager.updateActiveLayeredAdjustments(this.layeredAdjustments);
+    this.updateActiveLayerBar();
   }
 
   private onLayerStateChanged(): void {
     this.adjustments = flattenAdjustments(this.layeredAdjustments);
     this.process();
     this.folderManager.updateActiveLayeredAdjustments(this.layeredAdjustments);
+    this.updateActiveLayerBar();
   }
 
   private async loadBatchItem(item: BatchItem): Promise<void> {
@@ -541,6 +574,7 @@ export class App {
     this.effectsPanel.update(adj.effects);
     this.calibrationPanel.update(adj.calibration);
     if (adj.crop) this.cropPanel.update(adj.crop);
+    this.updateActiveLayerBar();
   }
 
   private process(): void {
