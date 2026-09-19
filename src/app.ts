@@ -115,7 +115,11 @@ export class App {
           this.showToast('No copied adjustments found');
         }
       },
+      onResize: () => {
+        this.fitToScreen();
+      },
     });
+
 
     this.batchExport = new BatchExport(document.getElementById('batch-export-modal')!);
 
@@ -517,7 +521,7 @@ export class App {
   private fitToScreen(): void {
     if (!this.processor.hasImage()) return;
     const area = document.getElementById('canvas-area')!;
-    const filmstripH = this.filmstripContainer.style.display !== 'none' ? 150 : 0;
+    const filmstripH = this.filmstripContainer.style.display !== 'none' ? this.filmstripContainer.clientHeight : 0;
     const areaW = area.clientWidth - 32;
     const areaH = area.clientHeight - 32 - filmstripH;
     const imgW = this.mainCanvas.width;

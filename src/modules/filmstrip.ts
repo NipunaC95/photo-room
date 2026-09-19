@@ -1,5 +1,5 @@
 // ============================================================
-// Filmstrip — Horizontal scroll bar UI for multi-photo editing
+// Filmstrip — Resizable horizontal scroll bar UI for multi-photo editing
 // ============================================================
 
 import type { FolderManager, BatchItem } from './folderManager';
@@ -19,6 +19,7 @@ export class Filmstrip {
   private exportAllBtn!: HTMLButtonElement;
   private openFolderBtn!: HTMLButtonElement;
   private downloadJsonBtn!: HTMLButtonElement;
+  private resizeHandle!: HTMLElement;
 
   // Drag scroll state
   private isDragging = false;
@@ -30,6 +31,7 @@ export class Filmstrip {
   private onOpenFolder?: () => void;
   private onCopySettings?: () => void;
   private onPasteSettings?: () => void;
+  private onResize?: (height: number) => void;
 
   constructor(
     container: HTMLElement,
@@ -40,6 +42,7 @@ export class Filmstrip {
       onOpenFolder?: () => void;
       onCopySettings?: () => void;
       onPasteSettings?: () => void;
+      onResize?: (height: number) => void;
     }
   ) {
     this.container = container;
@@ -50,14 +53,20 @@ export class Filmstrip {
       if (callbacks.onOpenFolder) this.onOpenFolder = callbacks.onOpenFolder;
       if (callbacks.onCopySettings) this.onCopySettings = callbacks.onCopySettings;
       if (callbacks.onPasteSettings) this.onPasteSettings = callbacks.onPasteSettings;
+      if (callbacks.onResize) this.onResize = callbacks.onResize;
     }
 
     this.renderSkeleton();
+    this.restoreSavedHeight();
     this.bindEvents();
+    this.bindResizeEvents();
   }
 
   private renderSkeleton(): void {
     this.container.innerHTML = `
+      <div class="filmstrip-resize-handle" id="filmstrip-resize-handle" title="Drag to resize filmstrip height (Double click to reset)">
+        <div class="resize-handle-bar"></div>
+      </div>
       <div class="filmstrip-header">
         <div class="filmstrip-left">
           <div class="filmstrip-folder-chip" id="filmstrip-folder-chip">
@@ -122,6 +131,7 @@ export class Filmstrip {
       </div>
     `;
 
+    this.resizeHandle = this.container.querySelector('#filmstrip-resize-handle')!;
     this.folderLabel = this.container.querySelector('#filmstrip-folder-label')!;
     this.syncStatusEl = this.container.querySelector('#filmstrip-sync-status')!;
     this.trackEl = this.container.querySelector('#filmstrip-track')!;
@@ -132,6 +142,51 @@ export class Filmstrip {
     this.exportAllBtn = this.container.querySelector('#fs-btn-export-all') as HTMLButtonElement;
     this.openFolderBtn = this.container.querySelector('#fs-btn-open-folder') as HTMLButtonElement;
     this.downloadJsonBtn = this.container.querySelector('#fs-btn-download-json') as HTMLButtonElement;
+  }
+
+  private restoreSavedHeight(): void {
+    const savedH = localStorage.getItem('davinci_filmstrip_height');
+    if (savedH) {
+      const h = parseInt(savedH, 10);
+      if (!isNaN(h) && h >= 68 && h <= 240) {
+        this.container.style.setProperty('--filmstrip-height', `${h}px`);
+        this.container.style.height = `${h}px`;
+      }
+    }
+  }
+
+  private bindResizeEvents(): void {
+    this.resizeHandle.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      const startY = e.clientY;
+      const startH = this.container.clientHeight;
+      this.container.classList.add('resizing');
+
+      const onMouseMove = (moveEvent: MouseEvent) => {
+        const deltaY = startY - moveEvent.clientY; // dragging UP increases height
+        const newH = Math.max(68, Math.min(240, startH + deltaY));
+        this.container.style.setProperty('--filmstrip-height', `${newH}px`);
+        this.container.style.height = `${newH}px`;
+        localStorage.setItem('davinci_filmstrip_height', String(newH));
+        if (this.onResize) this.onResize(newH);
+      };
+
+      const onMouseUp = () => {
+        this.container.classList.remove('resizing');
+        window.removeEventListener('mousemove', onMouseMove);
+        window.removeEventListener('mouseup', onMouseUp);
+      };
+
+      window.addEventListener('mousemove', onMouseMove);
+      window.addEventListener('mouseup', onMouseUp);
+    });
+
+    this.resizeHandle.addEventListener('dblclick', () => {
+      this.container.style.setProperty('--filmstrip-height', '96px');
+      this.container.style.height = '96px';
+      localStorage.removeItem('davinci_filmstrip_height');
+      if (this.onResize) this.onResize(96);
+    });
   }
 
   private bindEvents(): void {
@@ -145,6 +200,7 @@ export class Filmstrip {
 
     // Drag to scroll
     this.trackEl.addEventListener('mousedown', (e) => {
+      if ((e.target as HTMLElement).closest('.thumb-action-btn')) return;
       this.isDragging = true;
       this.trackEl.classList.add('dragging');
       this.startX = e.pageX - this.trackEl.offsetLeft;
@@ -205,12 +261,12 @@ export class Filmstrip {
           ${item.isRaw ? '<span class="raw-badge">RAW</span>' : ''}
           <div class="item-overlay">
             <button class="thumb-action-btn btn-reset-item" title="Reset settings" data-index="${index}">
-              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+              <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M2.5 8a5.5 5.5 0 101.61-3.89L2 6M2 2v4h4" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </button>
             <button class="thumb-action-btn btn-remove-item" title="Remove photo" data-index="${index}">
-              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+              <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M4 4l8 8M12 4l-8 8" stroke-linecap="round"/>
               </svg>
             </button>
@@ -225,7 +281,7 @@ export class Filmstrip {
       // Select photo click
       card.addEventListener('click', (e) => {
         const target = e.target as HTMLElement;
-        if (target.closest('.thumb-action-btn')) return; // Ignore action buttons click
+        if (target.closest('.thumb-action-btn')) return;
         if (this.onSelectPhoto) {
           this.onSelectPhoto(item, index);
         }

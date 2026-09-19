@@ -88,8 +88,7 @@ export class FolderManager {
     }
 
     try {
-      // @ts-expect-error - showDirectoryPicker is supported in modern browsers
-      const handle: FileSystemDirectoryHandle = await window.showDirectoryPicker({
+      const handle: FileSystemDirectoryHandle = await (window as any).showDirectoryPicker({
         mode: 'readwrite',
       });
       await this.loadFromDirectoryHandle(handle);
@@ -113,7 +112,6 @@ export class FolderManager {
     this.editsJsonHandle = null;
 
     // Scan entries
-    // @ts-expect-error - Directory iteration
     for await (const entry of handle.values()) {
       if (entry.kind === 'file') {
         const fileHandle = entry as FileSystemFileHandle;
@@ -352,8 +350,7 @@ export class FolderManager {
           fileHandle = await this.dirHandle.getFileHandle('davinci_edits.json', { create: true });
           this.editsJsonHandle = fileHandle;
         }
-        // @ts-expect-error - createWritable API
-        const writable = await fileHandle.createWritable();
+        const writable = await (fileHandle as any).createWritable();
         await writable.write(jsonStr);
         await writable.close();
         this.notifySyncStatus('synced');

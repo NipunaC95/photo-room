@@ -4,40 +4,84 @@
 @use 'variables' as *;
 
 .filmstrip-container {
+  --filmstrip-height: 96px;
   display: flex;
   flex-direction: column;
   background: $bg-elevated;
   border-top: 1px solid $border-subtle;
-  height: 148px;
+  height: var(--filmstrip-height, 96px);
   flex-shrink: 0;
   width: 100%;
   position: relative;
   z-index: 20;
+
+  &.resizing {
+    user-select: none;
+    .filmstrip-resize-handle {
+      background: rgba($accent-purple, 0.25);
+
+      .resize-handle-bar {
+        background: $accent-purple;
+        width: 48px;
+      }
+    }
+  }
+}
+
+.filmstrip-resize-handle {
+  position: absolute;
+  top: -4px;
+  left: 0;
+  right: 0;
+  height: 8px;
+  cursor: ns-resize;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background $transition-fast;
+
+  .resize-handle-bar {
+    width: 36px;
+    height: 3px;
+    border-radius: $radius-full;
+    background: rgba(255, 255, 255, 0.2);
+    transition: all $transition-fast;
+  }
+
+  &:hover {
+    background: rgba($accent-purple, 0.15);
+
+    .resize-handle-bar {
+      background: $accent-purple;
+      width: 48px;
+    }
+  }
 }
 
 .filmstrip-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 6px $space-3;
+  padding: 3px $space-3;
   background: $bg-surface;
   border-bottom: 1px solid $border-subtle;
-  font-size: 11px;
+  font-size: 10px;
 }
 
 .filmstrip-left {
   display: flex;
   align-items: center;
-  gap: $space-3;
+  gap: $space-2;
 }
 
 .filmstrip-folder-chip {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   color: $text-primary;
   font-weight: 600;
-  font-size: 11px;
+  font-size: 10px;
 
   svg {
     color: $accent-purple;
@@ -47,21 +91,21 @@
 .sync-status-badge {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 2px 8px;
+  gap: 4px;
+  padding: 1px 6px;
   border-radius: $radius-full;
-  font-size: 10px;
+  font-size: 9px;
   font-family: $font-mono;
   background: rgba($accent-blue, 0.1);
   border: 1px solid rgba($accent-blue, 0.2);
   color: $accent-blue;
 
   .sync-dot {
-    width: 6px;
-    height: 6px;
+    width: 5px;
+    height: 5px;
     border-radius: 50%;
     background: $accent-blue;
-    box-shadow: 0 0 8px $accent-blue;
+    box-shadow: 0 0 6px $accent-blue;
   }
 
   &.synced {
@@ -71,7 +115,7 @@
 
     .sync-dot {
       background: #06d6a0;
-      box-shadow: 0 0 8px #06d6a0;
+      box-shadow: 0 0 6px #06d6a0;
     }
   }
 
@@ -105,27 +149,27 @@
 .filmstrip-actions {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
 
 .filmstrip-divider {
   width: 1px;
-  height: 16px;
+  height: 12px;
   background: $border-subtle;
-  margin: 0 2px;
+  margin: 0 1px;
 }
 
 .filmstrip-btn {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  height: 24px;
-  padding: 0 8px;
+  gap: 3px;
+  height: 20px;
+  padding: 0 6px;
   border-radius: $radius-sm;
   background: $bg-surface-2;
   border: 1px solid $border-subtle;
   color: $text-secondary;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 500;
   cursor: pointer;
   transition: all $transition-fast;
@@ -155,14 +199,14 @@
   flex: 1;
   position: relative;
   overflow: hidden;
-  padding: 4px 0;
+  padding: 2px 0;
 }
 
 .filmstrip-scroll-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
+  width: 22px;
   height: 100%;
   background: rgba($bg-elevated, 0.85);
   backdrop-filter: blur(4px);
@@ -189,10 +233,10 @@
 .filmstrip-track {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex: 1;
   height: 100%;
-  padding: 0 12px;
+  padding: 0 8px;
   overflow-x: auto;
   overflow-y: hidden;
   scroll-behavior: smooth;
@@ -204,7 +248,7 @@
   }
 
   &::-webkit-scrollbar {
-    height: 4px;
+    height: 3px;
   }
 
   &::-webkit-scrollbar-thumb {
@@ -217,23 +261,24 @@
   }
 }
 
-// Item card
+// Lightroom-style compact item card
 .filmstrip-item {
   display: flex;
   flex-direction: column;
-  width: 104px;
+  width: calc((var(--filmstrip-height, 96px) - 34px) * 1.35);
+  min-width: 60px;
+  max-width: 240px;
   flex-shrink: 0;
   background: $bg-surface;
   border: 1px solid $border-subtle;
-  border-radius: $radius-md;
-  padding: 4px;
+  border-radius: $radius-sm;
+  padding: 3px;
   cursor: pointer;
-  transition: all $transition-fast;
+  transition: border-color $transition-fast, box-shadow $transition-fast;
   position: relative;
 
   &:hover {
     border-color: $border-active;
-    transform: translateY(-1px);
 
     .item-overlay {
       opacity: 1;
@@ -242,7 +287,7 @@
 
   &.active {
     border: 1.5px solid $accent-purple;
-    box-shadow: 0 0 14px rgba($accent-purple, 0.35);
+    box-shadow: 0 0 10px rgba($accent-purple, 0.35);
     background: $bg-surface-2;
 
     .thumb-name {
@@ -254,10 +299,12 @@
   .thumb-wrapper {
     position: relative;
     width: 100%;
-    height: 64px;
-    border-radius: $radius-sm;
+    height: calc(var(--filmstrip-height, 96px) - 38px);
+    min-height: 36px;
+    border-radius: 2px;
     overflow: hidden;
     background: #000;
+
 
     img {
       width: 100%;
@@ -269,25 +316,25 @@
 
   .edited-dot {
     position: absolute;
-    top: 4px;
-    right: 4px;
-    width: 8px;
-    height: 8px;
+    top: 3px;
+    right: 3px;
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
     background: $accent-purple;
-    box-shadow: 0 0 8px $accent-purple;
+    box-shadow: 0 0 6px $accent-purple;
   }
 
   .raw-badge {
     position: absolute;
-    bottom: 4px;
-    left: 4px;
-    font-size: 8px;
+    bottom: 2px;
+    left: 2px;
+    font-size: 7px;
     font-family: $font-mono;
     font-weight: 700;
-    padding: 1px 4px;
+    padding: 0 3px;
     border-radius: 2px;
-    background: rgba(#000, 0.7);
+    background: rgba(#000, 0.75);
     color: $accent-purple;
     border: 1px solid rgba($accent-purple, 0.4);
   }
@@ -295,9 +342,10 @@
   .item-overlay {
     position: absolute;
     inset: 0;
-    background: rgba(#000, 0.5);
+    background: rgba(#000, 0.6);
     display: flex;
     align-items: center;
+
     justify-content: center;
     gap: 6px;
     opacity: 0;
@@ -308,10 +356,10 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    height: 24px;
+    width: 20px;
+    height: 20px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.25);
     backdrop-filter: blur(4px);
     border: none;
     color: #fff;
@@ -327,25 +375,26 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-top: 4px;
-    padding: 0 2px;
+    margin-top: 2px;
+    padding: 0 1px;
   }
 
   .thumb-name {
-    font-size: 10px;
+    font-size: 9px;
     color: $text-secondary;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 72px;
+    max-width: 44px;
   }
 
   .thumb-index {
-    font-size: 9px;
+    font-size: 8px;
     font-family: $font-mono;
     color: $text-muted;
   }
 }
+
 
 // ----- Batch Export Modal -----
 .modal-overlay {
