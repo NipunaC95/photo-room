@@ -6,6 +6,8 @@
 ![Vite](https://img.shields.io/badge/Vite-8.3-646cff?style=flat-square&logo=vite)
 ![WebGL 2.0](https://img.shields.io/badge/WebGL-2.0-990000?style=flat-square&logo=webgl)
 ![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-0a84ff?style=flat-square&logo=github)](https://nipunac95.github.io/photo-room/)
+
 
 ---
 
